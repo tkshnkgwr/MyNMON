@@ -7,7 +7,7 @@ description = "Windows & Linux compatible ultra-lightweight CUI system monitor i
 
 [dependencies]
 sysinfo = "0.30.12"
-crossterm = "0.27.0"
+crossterm = "0.29.0"
 
 [profile.release]
 opt-level = 'z'
