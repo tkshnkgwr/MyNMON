@@ -1,5 +1,11 @@
 # MyNMON
 
+[![Japanese (日本語)](https://img.shields.io/badge/lang-%E6%97%A5%E6%9C%AC%E8%AA%9E-green.svg)](README.ja.md)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue.svg)
+![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)
+[![CI](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml)
+
 A lightweight, cross-platform CLI system monitor inspired by the classic `nmon` utility, written in Rust. It utilizes `sysinfo` for retrieving system metrics and `crossterm` for rendering a terminal-based user interface.
 
 ## Features
