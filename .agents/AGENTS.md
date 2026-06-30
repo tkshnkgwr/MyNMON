@@ -67,3 +67,16 @@ AIがコードの変更、機能追加、リファクタリングなどを行う
   - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (ビルド高速化のための `rust-cache` 含む), [`.github/workflows/release.yml`](../.github/workflows/release.yml) および [`.github/dependabot.yml`](../.github/dependabot.yml) を破壊しないこと。
   - 依存アクションのバージョン（`checkout@v4`, `action-gh-release@v2` など）やビルド構成の変更時には、これらの構成ファイルも動作可能な状態に維持し、整合性を保つこと。
 
+## 9. READMEファイルのバッジおよびリンク定義ルール
+- **言語切り替えナビゲーションの設置**:
+  - 英語版 `README.md` と日本語版 `README.ja.md` のそれぞれの冒頭（タイトル行の直下）には、もう一方の言語ファイルへの相互リンクを設けること。
+    - `README.md` には `[日本語 (Japanese)](README.ja.md)`
+    - `README.ja.md` には `[English (英語版)](README.md)`
+- **ステータスバッジの設置**:
+  - 各 README ファイルの冒頭（言語切り替えリンクの直下）には、以下の shields.io 等を用いたステータスバッジを定義し、常に最新状態に維持すること。
+    - **GitHub CIステータス**: `![CI Status](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)`
+    - **推奨Rustバージョン**: `![Rust Version](https://img.shields.io/badge/rust-1.96.0%2B-orange.svg)`
+    - **対応プラットフォーム**: `![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)`
+    - **ライセンス**: `![License](https://img.shields.io/badge/license-MIT-blue.svg)`
+
+
