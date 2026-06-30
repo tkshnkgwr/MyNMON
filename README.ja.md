@@ -1,10 +1,11 @@
 # MyNMON
 
-[![English (英語)](https://img.shields.io/badge/lang-English-blue.svg)](README.md)
+[English (英語版)](README.md)
+
+![CI Status](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)
+![Rust Version](https://img.shields.io/badge/rust-1.96.0%2B-orange.svg)
+![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue.svg)
-![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)
-[![CI](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml)
 
 `MyNMON` は、古典的なシステム監視ツール「nmon」にインスパイアされた、Rust製のクロスプラットフォーム対応・超軽量CUIシステムモニターです。`sysinfo` クレートを用いて各種メトリクスを取得し、`crossterm` クレートを用いてターミナル上にリアルタイムにシステム状態を描画します。
 
