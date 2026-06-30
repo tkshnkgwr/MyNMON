@@ -1,6 +1,6 @@
 [package]
-name = "rust-nmon"
-version = "0.1.0"
+name = "MyNMON"
+version = "0.1.3"
 edition = "2021"
 authors = ["AI Studio Developer"]
 description = "Windows & Linux compatible ultra-lightweight CUI system monitor inspired by nmon."

@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # GitHub Actions のアップデート設定
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Cargo (Rust) のアップデート設定
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"

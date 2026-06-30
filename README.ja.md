@@ -1,6 +1,6 @@
-# rust-nmon
+# MyNMON
 
-`rust-nmon` は、古典的なシステム監視ツール「nmon」にインスパイアされた、Rust製のクロスプラットフォーム対応・超軽量CUIシステムモニターです。`sysinfo` クレートを用いて各種メトリクスを取得し、`crossterm` クレートを用いてターミナル上にリアルタイムにシステム状態を描画します。
+`MyNMON` は、古典的なシステム監視ツール「nmon」にインスパイアされた、Rust製のクロスプラットフォーム対応・超軽量CUIシステムモニターです。`sysinfo` クレートを用いて各種メトリクスを取得し、`crossterm` クレートを用いてターミナル上にリアルタイムにシステム状態を描画します。
 
 ## 主な機能
 
@@ -24,6 +24,19 @@
 - `p` または `t` : プロセス一覧セクションの表示/非表示を切り替え
 - `q` または `Esc` : アプリケーションを終了
 
+## コマンドライン引数
+
+`MyNMON` は起動時に以下のコマンドライン引数を指定できます。
+
+- `-h`, `--help` : ヘルプメッセージ（使用方法とオプション一覧）を表示して終了します。
+- `-v`, `--version` : `Cargo.toml` から解決された動的なバージョン情報を表示して終了します。
+
+使用例：
+```bash
+./MyNMON --help
+./MyNMON --version
+```
+
 ## クイックスタート
 
 ### 前提条件
@@ -44,7 +57,7 @@ cargo run --release
 cargo build --release
 ```
 
-ビルドされたバイナリは `target/release/rust-nmon`（Windowsの場合は `target/release/rust-nmon.exe`）に出力されます。
+ビルドされたバイナリは `target/release/MyNMON`（Windowsの場合は `target/release/MyNMON.exe`）に出力されます。
 
 ## ディレクトリ構成
 

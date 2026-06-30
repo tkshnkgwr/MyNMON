@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & Release (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # 1. CLI版のビルド
+      - name: Build CLI release
+        run: cargo build --release --verbose
+
+      # 2. CLI版バイナリの退避
+      - name: Package CLI binary
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path target/dist
+          Copy-Item -Path target/release/MyNKF.exe -Destination target/dist/MyNKF.exe -Force
+
+      # 3. バイナリを含む zip アーカイブの作成
+      - name: Archive production binaries
+        shell: pwsh
+        run: |
+          Compress-Archive -Path target/dist/MyNKF.exe -DestinationPath target/dist/MyNKF-windows-x64.zip -Force
+
+      # 4. GitHub Release の作成とアップロード
+      - name: Create GitHub Release and Upload Asset
+        uses: softprops/action-gh-release@v3
+        with:
+          files: target/dist/MyNKF-windows-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
