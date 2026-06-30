@@ -6,7 +6,7 @@ authors = ["AI Studio Developer"]
 description = "Windows & Linux compatible ultra-lightweight CUI system monitor inspired by nmon."
 
 [dependencies]
-sysinfo = "0.30.12"
+sysinfo = "0.39.5"
 crossterm = "0.27.0"
 
 [profile.release]
