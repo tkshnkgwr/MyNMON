@@ -1,4 +1,4 @@
-# rust-nmon
+# MyNMON
 
 A lightweight, cross-platform CLI system monitor inspired by the classic `nmon` utility, written in Rust. It utilizes `sysinfo` for retrieving system metrics and `crossterm` for rendering a terminal-based user interface.
 
@@ -24,6 +24,19 @@ Press these keys while the application is running to toggle sections or quit:
 - `p` or `t` : Toggle Top processes section
 - `q` or `Esc` : Quit the application
 
+## Command-Line Options
+
+You can run `MyNMON` with the following command-line flags:
+
+- `-h`, `--help` : Print the help message containing command usage and options, then exit.
+- `-v`, `--version` : Print the dynamically resolved application version (from `Cargo.toml`), then exit.
+
+Example usage:
+```bash
+./MyNMON --help
+./MyNMON --version
+```
+
 ## Getting Started
 
 ### Prerequisites
@@ -44,7 +57,7 @@ To build a standalone executable:
 cargo build --release
 ```
 
-The compiled binary will be available at `target/release/rust-nmon` (or `target/release/rust-nmon.exe` on Windows).
+The compiled binary will be available at `target/release/MyNMON` (or `target/release/MyNMON.exe` on Windows).
 
 ## Directory Structure
 

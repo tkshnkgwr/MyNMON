@@ -21,6 +21,26 @@ struct MonitorState {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Parse command line arguments
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "-v" | "--version" => {
+                println!("MyNMON v{}", env!("CARGO_PKG_VERSION"));
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                print_help();
+                return Ok(());
+            }
+            other => {
+                eprintln!("Error: Unknown option '{}'", other);
+                eprintln!("Usage: {} [-h | --help] [-v | --version]", args[0]);
+                std::process::exit(1);
+            }
+        }
+    }
+
     // Terminal setup
     let mut stdout = io::stdout();
     terminal::enable_raw_mode()?;
@@ -98,10 +118,12 @@ fn draw_ui<W: Write>(
     let os_name = System::name().unwrap_or_else(|| "Unknown OS".to_string());
     let kernel = System::kernel_version().unwrap_or_else(|| "Unknown".to_string());
     
+    let version = env!("CARGO_PKG_VERSION");
+    let header_title = format!(" MyNMON v{} ", version);
     writeln!(
         w,
         "{} | Host: {} | OS: {} | Kernel: {}",
-        " rust-nmon v0.1.0 ".bold().black().on_green(),
+        header_title.bold().black().on_green(),
         hostname.cyan(),
         os_name.yellow(),
         kernel.magenta()
@@ -230,6 +252,26 @@ fn get_ascii_bar(percent: f64, width: usize) -> String {
     } else {
         format!("[{}>{}]", "=".repeat(filled - 1), " ".repeat(width - filled))
     }
+}
+
+fn print_help() {
+    println!("MyNMON v{}", env!("CARGO_PKG_VERSION"));
+    println!("A lightweight, cross-platform CLI system monitor inspired by nmon.");
+    println!();
+    println!("Usage:");
+    println!("  MyNMON [options]");
+    println!();
+    println!("Options:");
+    println!("  -h, --help     Print this help message");
+    println!("  -v, --version  Print version information");
+    println!();
+    println!("Interactive Keys (while running):");
+    println!("  c  Toggle CPU Core utilization display");
+    println!("  m  Toggle Memory allocation display");
+    println!("  d  Toggle Disk mounts & space display");
+    println!("  n  Toggle Network interface speed display");
+    println!("  p  Toggle Top processes display (also 't' key)");
+    println!("  q  Quit the application (also 'Esc' key)");
 }
 
 #[cfg(test)]

@@ -1,18 +1,18 @@
 # システム構成図 (DIAGRAM.md)
 
-本ドキュメントは、`rust-nmon` のスレッド、ライフサイクル、データ取得経路、およびイベント制御フローをダイアグラムで示したものです。
+本ドキュメントは、`MyNMON` のスレッド、ライフサイクル、データ取得経路、およびイベント制御フローをダイアグラムで示したものです。
 
 ---
 
 ## 1. アプリケーションのライフサイクルとイベントループ
 
-`rust-nmon` は、crosstermの非同期ポーリングとタイマー時間算出を組み合わせることで、低レイテンシーな描画とキーイベント応答を単一スレッドで両立しています。
+`MyNMON` は、crosstermの非同期ポーリングとタイマー時間算出を組み合わせることで、低レイテンシーな描画とキーイベント応答を単一スレッドで両立しています。
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as ユーザー
-    participant App as rust-nmon (Main)
+    participant App as MyNMON (Main)
     participant Term as ターミナル (crossterm)
     participant System as OS / ハードウェア (sysinfo)
 
@@ -64,7 +64,7 @@ graph TD
         NetInst["Networks (Rx/Tx bytes)"]
     end
 
-    subgraph "rust-nmon Logic"
+    subgraph "MyNMON Logic"
         State["MonitorState (show_cpu, show_mem, etc.)"]
         Draw["draw_ui Function"]
         AscBar["get_ascii_bar (ASCII Bar Engine)"]
