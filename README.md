@@ -3,6 +3,7 @@
 [日本語 (Japanese)](README.ja.md)
 
 ![CI Status](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)
+![Latest Release](https://img.shields.io/github/v/release/tkshnkgwr/MyNMON)
 ![Rust Version](https://img.shields.io/badge/rust-1.96.0%2B-orange.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -17,8 +18,11 @@ A lightweight, cross-platform CLI system monitor inspired by the classic `nmon` 
 - **Disk Mounts & Space**: Monitor disk mounts, filesystems, and available space.
 - **Network Interface I/O**: Track Rx/Tx speeds in KB/s for all active interfaces.
 - **Top Active Processes**: Monitor top processes sorted by CPU usage.
+- **Process Search/Filter**: Real-time filtering of the process list by name, with active match counts.
+- **Process Change Log**: Real-time spawn/exit logs of processes (+ for start, - for exit) showing recent changes.
+- **Double Launch Prevention**: Named Mutex protection on Windows to prevent screen rendering conflicts.
 - **Interactive Control**: Toggle components using simple keyboard shortcuts.
-- **Highly Optimized**: Small binary footprint (~300 KB) and low memory usage (~18 MB).
+- **Highly Optimized**: Small binary footprint (~308 KB) and low memory usage (~20.8 MB).
 
 ## Keyboard Shortcuts
 
@@ -29,7 +33,9 @@ Press these keys while the application is running to toggle sections or quit:
 - `d` : Toggle Disk mounts & space section
 - `n` : Toggle Network interface speed section
 - `p` or `t` : Toggle Top processes section
-- `q` or `Esc` : Quit the application
+- `g` or `l` : Toggle Process spawn/exit history log section
+- `f` : Start process search/filter mode (Press `Enter` or `Esc` to apply/exit search mode)
+- `q` or `Esc` : Quit the application (when not in search input mode)
 
 ## Command-Line Options
 
@@ -48,7 +54,23 @@ Example usage:
 
 ### Prerequisites
 
-Ensure you have Rust and Cargo installed. (Rust 1.70.0 or higher is recommended)
+1. Ensure you have Rust and Cargo installed. (Rust 1.96.0 or higher is recommended)
+2. This project depends on a shared library `common_lib` via a relative path (`../common_lib`). You need to clone both repositories in the same parent directory:
+
+```bash
+# Clone the shared library
+git clone https://github.com/tkshnkgwr/common_lib.git
+
+# Clone the main project (MyNMON)
+git clone https://github.com/tkshnkgwr/MyNMON.git
+```
+
+Your directory structure should look like this:
+```text
+parent_directory/
+├── common_lib/
+└── MyNMON/
+```
 
 ### Build and Run
 

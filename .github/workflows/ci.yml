@@ -14,15 +14,30 @@ jobs:
     name: Run cargo test and cargo build (Windows)
     runs-on: windows-latest
 
+    defaults:
+      run:
+        working-directory: MyNMON
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v7
+    - name: Checkout MyNMON
+      uses: actions/checkout@v4
+      with:
+        path: MyNMON
+
+    - name: Checkout common_lib
+      uses: actions/checkout@v4
+      with:
+        repository: tkshnkgwr/common_lib
+        path: common_lib
+        token: ${{ secrets.PAT || github.token }}
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       
     - name: Rust cache
       uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: MyNMON
       
     - name: Run cargo test
       run: cargo test --verbose

@@ -4,6 +4,46 @@
 
 ---
 
+## [0.1.8] - 2026-07-10
+
+### 変更
+- **共有クレートの二重起動防止API変更への追従**:
+  - 共有ライブラリ `common_lib` での `check_single_instance` の API 設計変更（戻り値が `Result<(), Error>` に変更）に伴い、`MyNMON` 側のエラーハンドリング処理を修正。
+  - 二重起動が検出された場合は、エラーメッセージを表示して終了コード `1` でプロセスを正常に終了するように修正。
+
+---
+
+## [0.1.7] - 2026-07-06
+
+### 変更
+- **GitHub Actions ワークフローの正常化**:
+  - `ci.yml` および `release.yml` において、非推奨・未定義のActionバージョン（`actions/checkout@v7`, `softprops/action-gh-release@v3`）を安定版（`actions/checkout@v4`, `softprops/action-gh-release@v2`）に修正。
+  - 親ディレクトリにある共有ライブラリ `common_lib` への相対パス依存を解決するため、チェックアウト後に同じ階層に `common_lib` をクローンするステップを追加（`secrets.PAT` 未設定時のフォールバックとして `github.token` を指定）。
+  - `run` コマンドがプロジェクトディレクトリ内で実行されるよう、ジョブレベルで `defaults.run.working-directory: MyNMON` を設定。
+  - `release.yml` のアセット作成・退避処理において、プロジェクト名が誤って `MyNKF` となっていた部分を `MyNMON` に修正し、アセットの指定パスを実際の出力先（`MyNMON/target/dist/...`）に調整。
+  - `Swatinem/rust-cache` に `workspaces: MyNMON` を指定してキャッシュ設定を修正。
+- **READMEにReleaseバッジを追加**:
+  - 最新のリリース状況を把握しやすくするため、`README.md` および `README.ja.md` にリリースバッジを追加。
+- **Clippy警告の解消**:
+  - `writeln!(w, "")` を `writeln!(w)` に修正（`writeln_empty_string` の解消）。
+  - `percent.max(0.0).min(100.0)` を `percent.clamp(0.0, 100.0)` に修正（`manual_clamp` の解消）。
+
+---
+
+## [0.1.6] - 2026-07-03
+
+### 追加
+- **共有クレート `common_lib` の統合**:
+  - `common_lib::check_single_instance` を用いた Windows 上での多重起動防止機能を追加。既に起動している場合はエラーを表示して即時終了。
+  - `common_lib::count_occurrences` を用いたプロセス検索/フィルタリング時のマッチ数カウント機能を追加。
+  - `common_lib::compute_diff` を用いたプロセスの起動・終了のリアルタイム差分ログ検知機能を追加。
+- **プロセスフィルタリング機能**:
+  - `f` キーで起動する、プロセス名によるリアルタイム絞り込み機能を追加。
+- **プロセス起動・終了差分ログ表示**:
+  - `g` または `l` キーでトグル可能な、プロセスの増減履歴ログ（最新10件、追加は緑色・削除は赤色のシンボル付き）の表示領域を追加。
+
+---
+
 ## [0.1.5] - 2026-06-30
 
 ### 追加
