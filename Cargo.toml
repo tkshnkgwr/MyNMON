@@ -1,6 +1,6 @@
 [package]
 name = "MyNMON"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 authors = ["AI Studio Developer"]
 description = "Windows & Linux compatible ultra-lightweight CUI system monitor inspired by nmon."
@@ -8,6 +8,8 @@ description = "Windows & Linux compatible ultra-lightweight CUI system monitor i
 [dependencies]
 sysinfo = "0.30.12"
 crossterm = "0.29.0"
+# 2026-07-03: 共有ライブラリの参照追加
+common_lib = { path = "../common_lib" }
 
 [profile.release]
 opt-level = 'z'

@@ -13,9 +13,22 @@ jobs:
     name: Build & Release (Windows)
     runs-on: windows-latest
 
+    defaults:
+      run:
+        working-directory: MyNMON
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      - name: Checkout MyNMON
+        uses: actions/checkout@v4
+        with:
+          path: MyNMON
+
+      - name: Checkout common_lib
+        uses: actions/checkout@v4
+        with:
+          repository: tkshnkgwr/common_lib
+          path: common_lib
+          token: ${{ secrets.PAT || github.token }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -29,18 +42,18 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path target/dist
-          Copy-Item -Path target/release/MyNKF.exe -Destination target/dist/MyNKF.exe -Force
+          Copy-Item -Path target/release/MyNMON.exe -Destination target/dist/MyNMON.exe -Force
 
       # 3. バイナリを含む zip アーカイブの作成
       - name: Archive production binaries
         shell: pwsh
         run: |
-          Compress-Archive -Path target/dist/MyNKF.exe -DestinationPath target/dist/MyNKF-windows-x64.zip -Force
+          Compress-Archive -Path target/dist/MyNMON.exe -DestinationPath target/dist/MyNMON-windows-x64.zip -Force
 
       # 4. GitHub Release の作成とアップロード
       - name: Create GitHub Release and Upload Asset
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v2
         with:
-          files: target/dist/MyNKF-windows-x64.zip
+          files: MyNMON/target/dist/MyNMON-windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
