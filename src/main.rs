@@ -284,13 +284,61 @@ fn draw_ui<W: Write>(
     // Move cursor to top-left instead of clearing the entire screen (prevents flickering)
     execute!(w, cursor::MoveTo(0, 0))?;
 
-    // Draw header
+    // Draw basic UI frames
+    draw_header(w, width, state.tick_rate)?;
+    draw_help(w)?;
+    draw_status_bar(w, width, sys, state)?;
+
+    // Welcome and Guide Screen when all sections are hidden
+    let all_hidden = !state.show_cpu_total
+        && !state.show_cpu_cores
+        && !state.show_mem
+        && !state.show_disk
+        && !state.show_net
+        && !state.show_proc
+        && !state.show_diff;
+
+    if all_hidden {
+        draw_welcome_screen(w)?;
+    }
+
+    // Draw toggled sections
+    if state.show_cpu_total {
+        draw_cpu_total(w, sys)?;
+    }
+    if state.show_cpu_cores {
+        draw_cpu_cores(w, sys)?;
+    }
+    if state.show_mem {
+        draw_memory(w, sys)?;
+    }
+    if state.show_disk {
+        draw_disk(w, disks)?;
+    }
+    if state.show_net {
+        draw_network(w, networks)?;
+    }
+    if state.show_proc {
+        draw_processes(w, sys, state)?;
+    }
+    if state.show_diff {
+        draw_diff_log(w, state)?;
+    }
+
+    // Clear any leftover lines from the previous frame
+    execute!(w, terminal::Clear(terminal::ClearType::FromCursorDown))?;
+
+    w.flush()?;
+    Ok(())
+}
+
+fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::Result<()> {
     let hostname = System::host_name().unwrap_or_else(|| "Unknown".to_string());
     let os_name = System::name().unwrap_or_else(|| "Unknown OS".to_string());
     let kernel = System::kernel_version().unwrap_or_else(|| "Unknown".to_string());
     let uptime_secs = System::uptime();
     let uptime_str = format_uptime(uptime_secs);
-    let interval_secs = state.tick_rate.as_secs();
+    let interval_secs = tick_rate.as_secs();
 
     let version = env!("CARGO_PKG_VERSION");
     let header_title = format!(" MyNMON v{} ", version);
@@ -326,8 +374,10 @@ fn draw_ui<W: Write>(
     };
     w_line!(w, "{}", header_str)?;
     w_line!(w, "{}", "-".repeat(width as usize).dark_grey())?;
+    Ok(())
+}
 
-    // Help line
+fn draw_help<W: Write>(w: &mut W) -> io::Result<()> {
     w_line!(
         w,
         " {} | {} | {} | {} to quit",
@@ -335,9 +385,15 @@ fn draw_ui<W: Write>(
         "[f]:Filter".yellow().bold(),
         "[r]:Interval".cyan().bold(),
         "[q]".red().bold()
-    )?;
+    )
+}
 
-    // Filter/Interval indicator
+fn draw_status_bar<W: Write>(
+    w: &mut W,
+    width: u16,
+    sys: &System,
+    state: &MonitorState,
+) -> io::Result<()> {
     if state.is_filtering {
         w_line!(
             w,
@@ -381,105 +437,125 @@ fn draw_ui<W: Write>(
     } else {
         w_line!(w, "{}", "=".repeat(width as usize).grey())?;
     }
+    Ok(())
+}
 
-    // Welcome and Guide Screen when all sections are hidden
-    let all_hidden = !state.show_cpu_total
-        && !state.show_cpu_cores
-        && !state.show_mem
-        && !state.show_disk
-        && !state.show_net
-        && !state.show_proc
-        && !state.show_diff;
+fn draw_welcome_screen<W: Write>(w: &mut W) -> io::Result<()> {
+    w_line!(w, "")?;
+    w_line!(w, "  {}", "Welcome to MyNMON!".bold().green())?;
+    w_line!(
+        w,
+        "  {}",
+        "A lightweight, cross-platform CLI system monitor inspired by nmon."
+    )?;
+    w_line!(
+        w,
+        "  {}",
+        "It monitors CPU, Memory, Disk, Network, and Processes in real-time."
+    )?;
+    w_line!(w, "")?;
+    w_line!(
+        w,
+        "  {}",
+        "--- Interactive Keys to Show Sections ---".bold().yellow()
+    )?;
+    w_line!(
+        w,
+        "    {} : Toggle Total CPU utilization display",
+        "C".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Toggle Individual CPU Core utilization display",
+        "c".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Toggle Memory allocation display",
+        "m".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Toggle Disk mounts & space display",
+        "d".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Toggle Network interface speed display",
+        "n".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Toggle Top processes display (also 't' key)",
+        "p".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Toggle Process Spawn/Exit history log (also 'l' key)",
+        "g".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Search/Filter processes by name (Enter/Esc to exit)",
+        "f".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Set screen refresh interval in seconds",
+        "r".cyan().bold()
+    )?;
+    w_line!(
+        w,
+        "    {} : Quit the application (also 'Esc' key)",
+        "q".cyan().bold()
+    )?;
+    w_line!(w, "")?;
+    w_line!(
+        w,
+        "  {}",
+        "Press any key above to start monitoring."
+            .italic()
+            .dark_grey()
+    )?;
+    w_line!(w, "")?;
+    Ok(())
+}
 
-    if all_hidden {
-        w_line!(w, "")?;
-        w_line!(w, "  {}", "Welcome to MyNMON!".bold().green())?;
-        w_line!(
-            w,
-            "  {}",
-            "A lightweight, cross-platform CLI system monitor inspired by nmon."
-        )?;
-        w_line!(
-            w,
-            "  {}",
-            "It monitors CPU, Memory, Disk, Network, and Processes in real-time."
-        )?;
-        w_line!(w, "")?;
-        w_line!(
-            w,
-            "  {}",
-            "--- Interactive Keys to Show Sections ---".bold().yellow()
-        )?;
-        w_line!(
-            w,
-            "    {} : Toggle Total CPU utilization display",
-            "C".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Toggle Individual CPU Core utilization display",
-            "c".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Toggle Memory allocation display",
-            "m".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Toggle Disk mounts & space display",
-            "d".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Toggle Network interface speed display",
-            "n".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Toggle Top processes display (also 't' key)",
-            "p".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Toggle Process Spawn/Exit history log (also 'l' key)",
-            "g".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Search/Filter processes by name (Enter/Esc to exit)",
-            "f".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Set screen refresh interval in seconds",
-            "r".cyan().bold()
-        )?;
-        w_line!(
-            w,
-            "    {} : Quit the application (also 'Esc' key)",
-            "q".cyan().bold()
-        )?;
-        w_line!(w, "")?;
-        w_line!(
-            w,
-            "  {}",
-            "Press any key above to start monitoring."
-                .italic()
-                .dark_grey()
-        )?;
-        w_line!(w, "")?;
-    }
+fn draw_cpu_total<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
+    let global_cpu = sys.global_cpu_info();
+    let load = global_cpu.cpu_usage();
+    let bar = get_ascii_bar(load as f64, 25);
+    w_line!(w, "{}", "--- CPU Utilization (Total) ---".bold().cyan())?;
+    w_line!(
+        w,
+        "  Total CPU: {:5.1}% {}",
+        load,
+        if load > 80.0 {
+            bar.red()
+        } else if load > 40.0 {
+            bar.yellow()
+        } else {
+            bar.green()
+        }
+    )?;
+    w_line!(w, "")?;
+    Ok(())
+}
 
-    // CPU Total Section
-    if state.show_cpu_total {
-        let global_cpu = sys.global_cpu_info();
-        let load = global_cpu.cpu_usage();
-        let bar = get_ascii_bar(load as f64, 25);
-        w_line!(w, "{}", "--- CPU Utilization (Total) ---".bold().cyan())?;
+fn draw_cpu_cores<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
+    w_line!(
+        w,
+        "{}",
+        "--- CPU Utilization (Individual Cores) ---".bold().cyan()
+    )?;
+    for (i, cpu) in sys.cpus().iter().enumerate() {
+        let load = cpu.cpu_usage();
+        let bar_width = 25;
+        let bar = get_ascii_bar(load as f64, bar_width);
         w_line!(
             w,
-            "  Total CPU: {:5.1}% {}",
+            "  Core {:2}: {:5.1}% {}",
+            i,
             load,
             if load > 80.0 {
                 bar.red()
@@ -489,228 +565,195 @@ fn draw_ui<W: Write>(
                 bar.green()
             }
         )?;
-        w_line!(w, "")?;
     }
+    w_line!(w, "")?;
+    Ok(())
+}
 
-    // CPU Cores Section
-    if state.show_cpu_cores {
-        w_line!(
-            w,
-            "{}",
-            "--- CPU Utilization (Individual Cores) ---".bold().cyan()
-        )?;
-        for (i, cpu) in sys.cpus().iter().enumerate() {
-            let load = cpu.cpu_usage();
-            let bar_width = 25;
-            let bar = get_ascii_bar(load as f64, bar_width);
-            w_line!(
-                w,
-                "  Core {:2}: {:5.1}% {}",
-                i,
-                load,
-                if load > 80.0 {
-                    bar.red()
-                } else if load > 40.0 {
-                    bar.yellow()
-                } else {
-                    bar.green()
-                }
-            )?;
-        }
-        w_line!(w, "")?;
-    }
+fn draw_memory<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
+    let total_mem = sys.total_memory() as f64 / 1024.0 / 1024.0;
+    let used_mem = sys.used_memory() as f64 / 1024.0 / 1024.0;
+    let free_mem = sys.free_memory() as f64 / 1024.0 / 1024.0;
+    let mem_pct = (used_mem / total_mem) * 100.0;
+    let mem_bar = get_ascii_bar(mem_pct, 40);
 
-    // Memory Section
-    if state.show_mem {
-        let total_mem = sys.total_memory() as f64 / 1024.0 / 1024.0;
-        let used_mem = sys.used_memory() as f64 / 1024.0 / 1024.0;
-        let free_mem = sys.free_memory() as f64 / 1024.0 / 1024.0;
-        let mem_pct = (used_mem / total_mem) * 100.0;
-        let mem_bar = get_ascii_bar(mem_pct, 40);
+    let total_swap = sys.total_swap() as f64 / 1024.0 / 1024.0;
+    let used_swap = sys.used_swap() as f64 / 1024.0 / 1024.0;
+    let free_swap = total_swap - used_swap;
+    let swap_pct = if total_swap > 0.0 {
+        (used_swap / total_swap) * 100.0
+    } else {
+        0.0
+    };
+    let swap_bar = get_ascii_bar(swap_pct, 40);
 
-        let total_swap = sys.total_swap() as f64 / 1024.0 / 1024.0;
-        let used_swap = sys.used_swap() as f64 / 1024.0 / 1024.0;
-        let free_swap = total_swap - used_swap;
-        let swap_pct = if total_swap > 0.0 {
-            (used_swap / total_swap) * 100.0
+    w_line!(w, "{}", "--- Memory Allocation ---".bold().magenta())?;
+    w_line!(
+        w,
+        "  Physical RAM : {:.2} GB Total | {:.2} GB Used | {:.2} GB Free",
+        total_mem / 1024.0,
+        used_mem / 1024.0,
+        free_mem / 1024.0
+    )?;
+    w_line!(
+        w,
+        "  RAM Usage    : {:5.1}% {}",
+        mem_pct,
+        if mem_pct > 85.0 {
+            mem_bar.red()
         } else {
-            0.0
-        };
-        let swap_bar = get_ascii_bar(swap_pct, 40);
-
-        w_line!(w, "{}", "--- Memory Allocation ---".bold().magenta())?;
-        w_line!(
-            w,
-            "  Physical RAM : {:.2} GB Total | {:.2} GB Used | {:.2} GB Free",
-            total_mem / 1024.0,
-            used_mem / 1024.0,
-            free_mem / 1024.0
-        )?;
-        w_line!(
-            w,
-            "  RAM Usage    : {:5.1}% {}",
-            mem_pct,
-            if mem_pct > 85.0 {
-                mem_bar.red()
-            } else {
-                mem_bar.magenta()
-            }
-        )?;
-        w_line!(
-            w,
-            "  Swap/Pagefile: {:.2} GB Total | {:.2} GB Used | {:.2} GB Free",
-            total_swap / 1024.0,
-            used_swap / 1024.0,
-            free_swap / 1024.0
-        )?;
-        w_line!(
-            w,
-            "  Swap Usage   : {:5.1}% {}",
-            swap_pct,
-            if swap_pct > 85.0 {
-                swap_bar.red()
-            } else {
-                swap_bar.magenta()
-            }
-        )?;
-        w_line!(w, "")?;
-    }
-
-    // Disk Section
-    if state.show_disk {
-        w_line!(w, "{}", "--- Disk Mounts & Space ---".bold().yellow())?;
-        for disk in disks.list() {
-            let total = disk.total_space() as f64 / 1024.0 / 1024.0 / 1024.0;
-            let available = disk.available_space() as f64 / 1024.0 / 1024.0 / 1024.0;
-            let used = total - available;
-            let usage_pct = (used / total) * 100.0;
-            w_line!(
-                w,
-                "  {:<12} ({:?}): {:.1}GB / {:.1}GB free ({:.1}% used)",
-                disk.mount_point().to_string_lossy(),
-                disk.file_system(),
-                available,
-                total,
-                usage_pct
-            )?;
+            mem_bar.magenta()
         }
-        w_line!(w, "")?;
-    }
-
-    // Network Section
-    if state.show_net {
-        w_line!(
-            w,
-            "{}",
-            "--- Network Interface I/O speeds ---".bold().blue()
-        )?;
-        let mut net_list: Vec<_> = networks.iter().collect();
-        net_list.sort_by(|a, b| a.0.cmp(b.0));
-
-        for (interface_name, data) in net_list {
-            let rx = data.received() as f64 / 1024.0; // KB/s
-            let tx = data.transmitted() as f64 / 1024.0; // KB/s
-            let name_fixed = pad_or_truncate(interface_name, 16);
-            w_line!(
-                w,
-                "  {} : Rx: {:8.2} KB/s | Tx: {:8.2} KB/s",
-                name_fixed,
-                rx,
-                tx
-            )?;
+    )?;
+    w_line!(
+        w,
+        "  Swap/Pagefile: {:.2} GB Total | {:.2} GB Used | {:.2} GB Free",
+        total_swap / 1024.0,
+        used_swap / 1024.0,
+        free_swap / 1024.0
+    )?;
+    w_line!(
+        w,
+        "  Swap Usage   : {:5.1}% {}",
+        swap_pct,
+        if swap_pct > 85.0 {
+            swap_bar.red()
+        } else {
+            swap_bar.magenta()
         }
-        w_line!(w, "")?;
-    }
+    )?;
+    w_line!(w, "")?;
+    Ok(())
+}
 
-    // Process Section
-    if state.show_proc {
+fn draw_disk<W: Write>(w: &mut W, disks: &Disks) -> io::Result<()> {
+    w_line!(w, "{}", "--- Disk Mounts & Space ---".bold().yellow())?;
+    for disk in disks.list() {
+        let total = disk.total_space() as f64 / 1024.0 / 1024.0 / 1024.0;
+        let available = disk.available_space() as f64 / 1024.0 / 1024.0 / 1024.0;
+        let used = total - available;
+        let usage_pct = (used / total) * 100.0;
         w_line!(
             w,
-            "{}",
-            "--- Top Active Processes by CPU Usage ---"
-                .bold()
-                .dark_grey()
+            "  {:<12} ({:?}): {:.1}GB / {:.1}GB free ({:.1}% used)",
+            disk.mount_point().to_string_lossy(),
+            disk.file_system(),
+            available,
+            total,
+            usage_pct
         )?;
-        let mut processes: Vec<_> = sys.processes().values().collect();
+    }
+    w_line!(w, "")?;
+    Ok(())
+}
 
-        // Filter processes by name
-        if !state.filter_query.is_empty() {
+fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> {
+    w_line!(
+        w,
+        "{}",
+        "--- Network Interface I/O speeds ---".bold().blue()
+    )?;
+    let mut net_list: Vec<_> = networks.iter().collect();
+    net_list.sort_by(|a, b| a.0.cmp(b.0));
+
+    for (interface_name, data) in net_list {
+        let rx = data.received() as f64 / 1024.0; // KB/s
+        let tx = data.transmitted() as f64 / 1024.0; // KB/s
+        let name_fixed = pad_or_truncate(interface_name, 16);
+        w_line!(
+            w,
+            "  {} : Rx: {:8.2} KB/s | Tx: {:8.2} KB/s",
+            name_fixed,
+            rx,
+            tx
+        )?;
+    }
+    w_line!(w, "")?;
+    Ok(())
+}
+
+fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -> io::Result<()> {
+    w_line!(
+        w,
+        "{}",
+        "--- Top Active Processes by CPU Usage ---"
+            .bold()
+            .dark_grey()
+    )?;
+    let mut processes: Vec<_> = sys.processes().values().collect();
+
+    // Filter processes by name
+    if !state.filter_query.is_empty() {
+        let query = state.filter_query.to_lowercase();
+        processes.retain(|p| p.name().to_lowercase().contains(&query));
+    }
+
+    processes.sort_by(|a, b| b.cpu_usage().partial_cmp(&a.cpu_usage()).unwrap());
+
+    w_line!(
+        w,
+        "  {:>6} {:<20} {:>10} {:>14}",
+        "PID",
+        "Process Name",
+        "CPU %",
+        "Memory (MB)"
+    )?;
+    for proc in processes.iter().take(8) {
+        let mem_mb = proc.memory() as f64 / 1024.0 / 1024.0;
+        let name_fixed = pad_or_truncate(proc.name(), 20);
+        let cpu_val = format!("{:.1}%", proc.cpu_usage());
+        let mem_val = format!("{:.1} MB", mem_mb);
+        let pid_val = proc.pid().to_string();
+        w_line!(
+            w,
+            "  {:>6} {} {:>10} {:>14}",
+            pid_val,
+            name_fixed,
+            cpu_val,
+            mem_val
+        )?;
+    }
+    w_line!(w, "")?;
+    Ok(())
+}
+
+fn draw_diff_log<W: Write>(w: &mut W, state: &MonitorState) -> io::Result<()> {
+    w_line!(
+        w,
+        "{}",
+        "--- Process Spawn/Exit History Log ---".bold().magenta()
+    )?;
+    if state.spawn_exit_log.is_empty() {
+        w_line!(w, "  No process changes detected yet.")?;
+    } else {
+        // Apply filter to logs as well
+        let filtered_logs: Vec<String> = if !state.filter_query.is_empty() {
             let query = state.filter_query.to_lowercase();
-            processes.retain(|p| p.name().to_lowercase().contains(&query));
-        }
-
-        processes.sort_by(|a, b| b.cpu_usage().partial_cmp(&a.cpu_usage()).unwrap());
-
-        w_line!(
-            w,
-            "  {:>6} {:<20} {:>10} {:>14}",
-            "PID",
-            "Process Name",
-            "CPU %",
-            "Memory (MB)"
-        )?;
-        for proc in processes.iter().take(8) {
-            let mem_mb = proc.memory() as f64 / 1024.0 / 1024.0;
-            let name_fixed = pad_or_truncate(proc.name(), 20);
-            let cpu_val = format!("{:.1}%", proc.cpu_usage());
-            let mem_val = format!("{:.1} MB", mem_mb);
-            let pid_val = proc.pid().to_string();
-            w_line!(
-                w,
-                "  {:>6} {} {:>10} {:>14}",
-                pid_val,
-                name_fixed,
-                cpu_val,
-                mem_val
-            )?;
-        }
-        w_line!(w, "")?;
-    }
-
-    // Diff Log Section
-    if state.show_diff {
-        w_line!(
-            w,
-            "{}",
-            "--- Process Spawn/Exit History Log ---".bold().magenta()
-        )?;
-        if state.spawn_exit_log.is_empty() {
-            w_line!(w, "  No process changes detected yet.")?;
+            state
+                .spawn_exit_log
+                .iter()
+                .filter(|log| log.to_lowercase().contains(&query))
+                .cloned()
+                .collect()
         } else {
-            // Apply filter to logs as well
-            let filtered_logs: Vec<String> = if !state.filter_query.is_empty() {
-                let query = state.filter_query.to_lowercase();
-                state
-                    .spawn_exit_log
-                    .iter()
-                    .filter(|log| log.to_lowercase().contains(&query))
-                    .cloned()
-                    .collect()
-            } else {
-                state.spawn_exit_log.clone()
-            };
+            state.spawn_exit_log.clone()
+        };
 
-            if filtered_logs.is_empty() {
-                w_line!(w, "  No changes matching filter query.")?;
-            } else {
-                // Show last 10 logs
-                let start_idx = filtered_logs.len().saturating_sub(10);
-                for log in &filtered_logs[start_idx..] {
-                    if log.starts_with('+') {
-                        w_line!(w, "  {}", log.clone().green())?;
-                    } else {
-                        w_line!(w, "  {}", log.clone().red())?;
-                    }
+        if filtered_logs.is_empty() {
+            w_line!(w, "  No changes matching filter query.")?;
+        } else {
+            // Show last 10 logs
+            let start_idx = filtered_logs.len().saturating_sub(10);
+            for log in &filtered_logs[start_idx..] {
+                if log.starts_with('+') {
+                    w_line!(w, "  {}", log.clone().green())?;
+                } else {
+                    w_line!(w, "  {}", log.clone().red())?;
                 }
             }
         }
-        w_line!(w, "")?;
     }
-
-    // Clear any leftover lines from the previous frame
-    execute!(w, terminal::Clear(terminal::ClearType::FromCursorDown))?;
-
-    w.flush()?;
+    w_line!(w, "")?;
     Ok(())
 }
 
