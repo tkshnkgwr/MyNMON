@@ -20,18 +20,25 @@ sequenceDiagram
     App->>Term: 生モード有効化 & オルタネート画面切り替え & カーソル非表示
     App->>System: メトリクスの初期化・初回リフレッシュ
 
-    loop 1秒間隔のメインループ
+    loop メインループ (設定されたリフレッシュ間隔ごと)
         App->>System: 最新のメトリクス情報をリフレッシュ (CPU, RAM, Disks, Networks, Processes)
         System-->>App: メトリクスデータ
         App->>Term: UIを描画 (draw_ui)
         Term-->>User: 画面表示更新
 
-        Note over App: キーポーリングの待機時間算出<br/>(1秒 - 前回のループ経過時間)
+        Note over App: キーポーリングの待機時間算出<br/>(設定間隔 - 前回のループ経過時間)
         
         alt 待機時間内にキー入力あり
-            User->>Term: キーを押す (c, m, d, n, p, t 等)
+            User->>Term: キーを押す
             Term->>App: イベント検出 (event::poll)
-            App->>App: 表示状態 (MonitorState) をトグル更新
+            alt 'r' キー (リフレッシュ間隔変更)
+                App->>App: 入力モード開始 (is_setting_interval = true)
+                User->>Term: 秒数入力 + Enter
+                Term->>App: キーイベント (Enter)
+                App->>App: tick_rate を更新し入力モード終了
+            else その他のトグルキー
+                App->>App: 表示状態 (MonitorState) をトグル更新
+            end
         else 待機時間超過 (タイムアウト)
             Note over App: 何もせず次のループへ進む
         end
