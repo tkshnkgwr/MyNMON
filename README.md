@@ -8,26 +8,32 @@
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
+![MyNMON Demo Screenshot](docs/images/demo.png)
+
 A lightweight, cross-platform CLI system monitor inspired by the classic `nmon` utility, written in Rust. It utilizes `sysinfo` for retrieving system metrics and `crossterm` for rendering a terminal-based user interface.
 
 ## Features
 
-- **Multi-section display**: Easily toggle display sections dynamically.
-- **CPU Utilization**: View usage percentages and visual bars for individual CPU cores.
-- **Memory Allocation**: Real-time stats on physical RAM (total, used, and free).
-- **Disk Mounts & Space**: Monitor disk mounts, filesystems, and available space.
-- **Network Interface I/O**: Track Rx/Tx speeds in KB/s for all active interfaces.
-- **Top Active Processes**: Monitor top processes sorted by CPU usage.
-- **Process Search/Filter**: Real-time filtering of the process list by name, with active match counts.
-- **Process Change Log**: Real-time spawn/exit logs of processes (+ for start, - for exit) showing recent changes.
+- **Multi-section display**: Toggle sections dynamically. CPU total and individual cores can be toggled separately.
+- **Initial Welcome Help Screen**: Displays usage commands and keyboard shortcut help centered on the screen when all sections are hidden at startup.
+- **CPU Utilization**: Monitor total CPU usage and individual CPU cores with visual ASCII progress bars.
+- **Memory Allocation**: Real-time statistics on physical RAM and swap memory (total, used, and free).
+- **Disk Mounts & Space**: Monitor disk mount points, filesystems, and available space.
+- **Network Interface I/O**: Track Rx/Tx speeds in KB/s sorted alphabetically by interface name with stable text alignment.
+- **Top Active Processes**: Monitor active processes sorted by CPU usage. PID and process names are properly formatted and aligned.
+- **Process Search/Filter**: Real-time filtering of the process list by name, showing the active match counts.
+- **Process Change Log**: Real-time spawn/exit history logs (+ for spawn, - for exit) showing recent process differences.
+- **Dynamic Refresh Interval**: Change screen refresh intervals (seconds) interactively by pressing `r` and entering a number while running.
+- **Screen Protection (Size Check)**: Automatically skips rendering and displays a warning message if the terminal size is smaller than the minimum requirement (80x20).
 - **Double Launch Prevention**: Named Mutex protection on Windows to prevent screen rendering conflicts.
-- **Interactive Control**: Toggle components using simple keyboard shortcuts.
-- **Highly Optimized**: Small binary footprint (~308 KB) and low memory usage (~20.8 MB).
+- **Interactive Control**: Toggle components immediately using simple keyboard shortcuts.
+- **Highly Optimized**: Extremely small binary footprint (~324 KB) and low memory usage (~21.3 MB).
 
 ## Keyboard Shortcuts
 
 Press these keys while the application is running to toggle sections or quit:
 
+- `C` : Toggle Total CPU utilization section
 - `c` : Toggle CPU Core utilization section
 - `m` : Toggle Memory allocation section
 - `d` : Toggle Disk mounts & space section
@@ -35,7 +41,8 @@ Press these keys while the application is running to toggle sections or quit:
 - `p` or `t` : Toggle Top processes section
 - `g` or `l` : Toggle Process spawn/exit history log section
 - `f` : Start process search/filter mode (Press `Enter` or `Esc` to apply/exit search mode)
-- `q` or `Esc` : Quit the application (when not in search input mode)
+- `r` : Set screen refresh interval in seconds (Enter/Esc to save/cancel)
+- `q` or `Esc` : Quit the application (when not in input mode)
 
 ## Command-Line Options
 
