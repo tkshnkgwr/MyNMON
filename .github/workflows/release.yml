@@ -19,12 +19,12 @@ jobs:
 
     steps:
       - name: Checkout MyNMON
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: MyNMON
 
       - name: Checkout common_lib
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: tkshnkgwr/common_lib
           path: common_lib
