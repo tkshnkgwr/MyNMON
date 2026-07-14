@@ -52,7 +52,7 @@ jobs:
 
       # 4. GitHub Release の作成とアップロード
       - name: Create GitHub Release and Upload Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: MyNMON/target/dist/MyNMON-windows-x64.zip
         env:
