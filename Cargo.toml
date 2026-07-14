@@ -1,6 +1,6 @@
 [package]
 name = "MyNMON"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 authors = ["AI Studio Developer"]
 description = "Windows & Linux compatible ultra-lightweight CUI system monitor inspired by nmon."

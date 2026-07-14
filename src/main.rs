@@ -1,3 +1,17 @@
+//! # MyNMON
+//! 
+//! `MyNMON` は、Windows および Linux 環境に対応した超軽量な CUI システムモニターです。
+//! 伝統的な `nmon` にインスパイアされており、ターミナル上でリアルタイムにシステムの稼働状況を監視できます。
+//! 
+//! ## 主な機能
+//! - CPU使用率の表示（全体およびコア個別）
+//! - メモリおよびスワップ領域の割り当て状況表示
+//! - ディスクマウント情報と空き容量の表示
+//! - ネットワークインターフェースごとの送受信速度（I/O）表示
+//! - CPU使用率順のプロセス一覧表示（名前でのフィルタリング機能付き）
+//! - プロセスの起動・終了履歴のログ表示
+//! - 画面更新間隔の動的変更
+
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode},
@@ -12,31 +26,50 @@ use std::{
 };
 use sysinfo::{Disks, Networks, System};
 
+/// アプリケーションの監視状態や設定を管理する構造体。
 struct MonitorState {
+    /// 全体CPU使用率を表示するかどうか
     show_cpu_total: bool,
+    /// 個々のCPUコア使用率を表示するかどうか
     show_cpu_cores: bool,
+    /// メモリ使用状況を表示するかどうか
     show_mem: bool,
+    /// ディスク空き容量を表示するかどうか
     show_disk: bool,
+    /// ネットワーク速度を表示するかどうか
     show_net: bool,
+    /// プロセス一覧を表示するかどうか
     show_proc: bool,
+    /// プロセス起動・終了ログを表示するかどうか
     show_diff: bool,
+    /// プロセス名フィルターのクエリ文字列
     filter_query: String,
+    /// 現在プロセスフィルター入力モードであるかどうか
     is_filtering: bool,
+    /// 前回のプロセス一覧の文字列表現（差分検出用）
     last_process_list: String,
+    /// プロセスの起動（+）および終了（-）の履歴ログ
     spawn_exit_log: Vec<String>,
+    /// 画面の更新レート（ティックレート）
     tick_rate: Duration,
+    /// 現在更新間隔設定入力モードであるかどうか
     is_setting_interval: bool,
+    /// 更新間隔入力用の一時文字列
     interval_input: String,
 }
 
+/// アプリケーションのエントリポイント。
+/// 
+/// 二重起動の防止、コマンドライン引数の解析、ターミナル設定の初期化、
+/// およびメインのシステム監視イベントループの制御を行います。
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Prevent double launch on Windows
+    // Windows上での二重起動を防止
     if let Err(e) = common_lib::check_single_instance("MyNMON_NamedMutex_Instance", "MyNMON") {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
 
-    // Parse command line arguments
+    // コマンドライン引数の解析
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
         match args[1].as_str() {
@@ -56,7 +89,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Terminal setup
+    // ターミナルの初期設定
     let mut stdout = io::stdout();
     terminal::enable_raw_mode()?;
     execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
@@ -83,17 +116,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut last_tick = Instant::now();
 
-    // Initial system refresh
+    // システム情報の初回更新
     sys.refresh_all();
     thread::sleep(Duration::from_millis(100));
 
     loop {
-        // Refresh metrics
+        // 各種メトリクスを更新
         sys.refresh_all();
         disks.refresh();
         networks.refresh();
 
-        // Process change detection using common_lib::compute_diff
+        // common_lib::compute_diff を使用したプロセスの変更検知
         {
             let mut current_processes: Vec<_> = sys.processes().values().collect();
             current_processes.sort_by_key(|p| p.pid().as_u32());
@@ -134,10 +167,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        // Draw terminal
+        // ターミナルの描画実行
         draw_ui(&mut stdout, &sys, &disks, &networks, &state)?;
 
-        // Key event polling
+        // キーイベントのポーリング
         let timeout = state
             .tick_rate
             .checked_sub(last_tick.elapsed())
@@ -213,12 +246,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Restore terminal
+    // ターミナル状態の復元
     execute!(stdout, LeaveAlternateScreen, cursor::Show)?;
     terminal::disable_raw_mode()?;
     Ok(())
 }
 
+/// 指定したライター（標準出力等）へフォーマットされた文字列を出力し、
+/// 行末までをクリアしたうえで改行するヘルパーマクロ。
 macro_rules! w_line {
     ($w:expr, $($arg:tt)*) => {
         {
@@ -229,6 +264,9 @@ macro_rules! w_line {
     };
 }
 
+/// システムの起動時間（秒）を、日・時間・分・秒の読みやすい形式の文字列にフォーマットする。
+/// 
+/// 1日以上の場合は `Xd HH:MM:SS`、1日未満の場合は `HH:MM:SS` となります。
 fn format_uptime(uptime_secs: u64) -> String {
     let days = uptime_secs / 86400;
     let hours = (uptime_secs % 86400) / 3600;
@@ -241,6 +279,9 @@ fn format_uptime(uptime_secs: u64) -> String {
     }
 }
 
+/// 全角・半角を考慮した文字幅（半角=1, 全角=2）で、文字列を指定された幅にパディングまたは切り詰める。
+/// 
+/// 指定幅を超えた部分は切り捨てられ、満たない部分はスペースで埋められます。
 fn pad_or_truncate(s: &str, width: usize) -> String {
     let mut current_width = 0;
     let mut result = String::new();
@@ -261,6 +302,10 @@ fn pad_or_truncate(s: &str, width: usize) -> String {
     result
 }
 
+/// システム情報および監視状態に基づき、ターミナル画面全体を描画する。
+/// 
+/// ターミナルサイズが 80x20 未満の場合はエラーメッセージを表示します。
+/// また、画面のちらつきを防止するため、全画面クリアではなくカーソルを左上に移動して上書き描画を行います。
 fn draw_ui<W: Write>(
     w: &mut W,
     sys: &System,
@@ -268,7 +313,7 @@ fn draw_ui<W: Write>(
     networks: &Networks,
     state: &MonitorState,
 ) -> io::Result<()> {
-    // Check terminal size first (flicker protection & screen wrap prevention)
+    // ターミナルサイズを最初にチェック（画面崩れおよび折り返し防止）
     let (width, height) = crossterm::terminal::size().unwrap_or((80, 20));
     if width < 80 || height < 20 {
         execute!(w, cursor::MoveTo(0, 0))?;
@@ -281,15 +326,15 @@ fn draw_ui<W: Write>(
         return Ok(());
     }
 
-    // Move cursor to top-left instead of clearing the entire screen (prevents flickering)
+    // 画面全体をクリアする代わりにカーソルを左上に移動（ちらつき防止）
     execute!(w, cursor::MoveTo(0, 0))?;
 
-    // Draw basic UI frames
+    // 基本的なUIフレームを描画
     draw_header(w, width, state.tick_rate)?;
     draw_help(w)?;
     draw_status_bar(w, width, sys, state)?;
 
-    // Welcome and Guide Screen when all sections are hidden
+    // すべてのセクションが非表示の場合はウェルカム/ガイド画面を表示
     let all_hidden = !state.show_cpu_total
         && !state.show_cpu_cores
         && !state.show_mem
@@ -302,7 +347,7 @@ fn draw_ui<W: Write>(
         draw_welcome_screen(w)?;
     }
 
-    // Draw toggled sections
+    // 有効化された各セクションを描画
     if state.show_cpu_total {
         draw_cpu_total(w, sys)?;
     }
@@ -325,13 +370,16 @@ fn draw_ui<W: Write>(
         draw_diff_log(w, state)?;
     }
 
-    // Clear any leftover lines from the previous frame
+    // 前のフレームの残存行をクリア
     execute!(w, terminal::Clear(terminal::ClearType::FromCursorDown))?;
 
     w.flush()?;
     Ok(())
 }
 
+/// ホスト名、OS名、カーネルバージョン、アップタイム、更新間隔を表示するヘッダー部を描画する。
+/// 
+/// ターミナル幅（`width`）に応じて表示する情報を調整し、行の折り返しを防ぎます。
 fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::Result<()> {
     let hostname = System::host_name().unwrap_or_else(|| "Unknown".to_string());
     let os_name = System::name().unwrap_or_else(|| "Unknown OS".to_string());
@@ -343,7 +391,7 @@ fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::Resu
     let version = env!("CARGO_PKG_VERSION");
     let header_title = format!(" MyNMON v{} ", version);
 
-    // Responsive header display based on terminal width to prevent line wrapping
+    // 折り返しを防ぐため、ターミナル幅に応じたレスポンシブなヘッダー表示
     let header_str = if width >= 105 {
         format!(
             "{} | Host: {} | OS: {} | Kernel: {} | Uptime: {} | Interval: {}s",
@@ -377,6 +425,7 @@ fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::Resu
     Ok(())
 }
 
+/// 操作可能なキーショートカットの案内（ヘルプ行）を描画する。
 fn draw_help<W: Write>(w: &mut W) -> io::Result<()> {
     w_line!(
         w,
@@ -388,6 +437,7 @@ fn draw_help<W: Write>(w: &mut W) -> io::Result<()> {
     )
 }
 
+/// プロセスフィルター入力、更新間隔変更入力、または現在のフィルター状態を表示するステータスバーを描画する。
 fn draw_status_bar<W: Write>(
     w: &mut W,
     width: u16,
@@ -417,7 +467,7 @@ fn draw_status_bar<W: Write>(
         )?;
         w_line!(w, "{}", "-".repeat(width as usize).dark_grey())?;
     } else if !state.filter_query.is_empty() {
-        // count_occurrences to find matches across all process names
+        // すべてのプロセス名からマッチする件数をカウント
         let all_proc_names = sys
             .processes()
             .values()
@@ -440,6 +490,8 @@ fn draw_status_bar<W: Write>(
     Ok(())
 }
 
+/// アプリケーション起動時など、すべての監視セクションが非表示の場合に表示される、
+/// ウェルカム画面と詳細なキー操作ガイドを描画する。
 fn draw_welcome_screen<W: Write>(w: &mut W) -> io::Result<()> {
     w_line!(w, "")?;
     w_line!(w, "  {}", "Welcome to MyNMON!".bold().green())?;
@@ -521,6 +573,7 @@ fn draw_welcome_screen<W: Write>(w: &mut W) -> io::Result<()> {
     Ok(())
 }
 
+/// 全体のCPU使用率を取得し、ASCIIのプログレスバーを交えて描画する。
 fn draw_cpu_total<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     let global_cpu = sys.global_cpu_info();
     let load = global_cpu.cpu_usage();
@@ -542,6 +595,7 @@ fn draw_cpu_total<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     Ok(())
 }
 
+/// 個々のCPUコアの使用率を個別に取得し、それぞれASCIIプログレスバーとともに描画する。
 fn draw_cpu_cores<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     w_line!(
         w,
@@ -570,6 +624,8 @@ fn draw_cpu_cores<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     Ok(())
 }
 
+/// 物理メモリ（RAM）およびスワップ領域（Windowsの場合はページファイル）の
+/// 総量、使用量、空き容量を取得し、ASCIIバーとあわせて描画する。
 fn draw_memory<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     let total_mem = sys.total_memory() as f64 / 1024.0 / 1024.0;
     let used_mem = sys.used_memory() as f64 / 1024.0 / 1024.0;
@@ -626,6 +682,7 @@ fn draw_memory<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     Ok(())
 }
 
+/// マウントされている各ディスクのファイルシステム、空き容量、総量、および使用率を描画する。
 fn draw_disk<W: Write>(w: &mut W, disks: &Disks) -> io::Result<()> {
     w_line!(w, "{}", "--- Disk Mounts & Space ---".bold().yellow())?;
     for disk in disks.list() {
@@ -647,6 +704,7 @@ fn draw_disk<W: Write>(w: &mut W, disks: &Disks) -> io::Result<()> {
     Ok(())
 }
 
+/// 各ネットワークインターフェースのデータの受信速度（Rx）および送信速度（Tx）をKB/s単位で描画する。
 fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> {
     w_line!(
         w,
@@ -657,8 +715,8 @@ fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> {
     net_list.sort_by(|a, b| a.0.cmp(b.0));
 
     for (interface_name, data) in net_list {
-        let rx = data.received() as f64 / 1024.0; // KB/s
-        let tx = data.transmitted() as f64 / 1024.0; // KB/s
+        let rx = data.received() as f64 / 1024.0; // KB/秒
+        let tx = data.transmitted() as f64 / 1024.0; // KB/秒
         let name_fixed = pad_or_truncate(interface_name, 16);
         w_line!(
             w,
@@ -672,6 +730,9 @@ fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> {
     Ok(())
 }
 
+/// プロセス一覧をCPU使用率順にソートし、上位8プロセスを表示する。
+/// 
+/// フィルタークエリが設定されている場合は、プロセス名にクエリが含まれるもののみを抽出します。
 fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -> io::Result<()> {
     w_line!(
         w,
@@ -682,7 +743,7 @@ fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -> io
     )?;
     let mut processes: Vec<_> = sys.processes().values().collect();
 
-    // Filter processes by name
+    // プロセス名でフィルタリング
     if !state.filter_query.is_empty() {
         let query = state.filter_query.to_lowercase();
         processes.retain(|p| p.name().to_lowercase().contains(&query));
@@ -717,6 +778,9 @@ fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -> io
     Ok(())
 }
 
+/// プロセスの起動（+）および終了（-）の履歴ログを直近10件表示する。
+/// 
+/// フィルタークエリが設定されている場合は、ログ文字列にクエリが含まれるもののみを表示します。
 fn draw_diff_log<W: Write>(w: &mut W, state: &MonitorState) -> io::Result<()> {
     w_line!(
         w,
@@ -726,7 +790,7 @@ fn draw_diff_log<W: Write>(w: &mut W, state: &MonitorState) -> io::Result<()> {
     if state.spawn_exit_log.is_empty() {
         w_line!(w, "  No process changes detected yet.")?;
     } else {
-        // Apply filter to logs as well
+        // ログに対してもフィルターを適用
         let filtered_logs: Vec<String> = if !state.filter_query.is_empty() {
             let query = state.filter_query.to_lowercase();
             state
@@ -742,7 +806,7 @@ fn draw_diff_log<W: Write>(w: &mut W, state: &MonitorState) -> io::Result<()> {
         if filtered_logs.is_empty() {
             w_line!(w, "  No changes matching filter query.")?;
         } else {
-            // Show last 10 logs
+            // 最新10件のログを表示
             let start_idx = filtered_logs.len().saturating_sub(10);
             for log in &filtered_logs[start_idx..] {
                 if log.starts_with('+') {
@@ -757,6 +821,11 @@ fn draw_diff_log<W: Write>(w: &mut W, state: &MonitorState) -> io::Result<()> {
     Ok(())
 }
 
+/// パーセンテージと幅に基づいて、ASCIIで表現されたプログレスバー（例: `[====>     ]`）を生成する。
+/// 
+/// # 引数
+/// - `percent`: 割合（0.0 から 100.0 の範囲にクランプされます）
+/// - `width`: バーの文字幅
 fn get_ascii_bar(percent: f64, width: usize) -> String {
     let pct = percent.clamp(0.0, 100.0);
     let filled = ((pct / 100.0) * width as f64).round() as usize;
@@ -773,6 +842,7 @@ fn get_ascii_bar(percent: f64, width: usize) -> String {
     }
 }
 
+/// `PID:プロセス名` 形式の文字列を解析し、`(PID, プロセス名)` のタプルを返すヘルパー関数。
 fn parse_proc_line(line: &str) -> Option<(String, String)> {
     let parts: Vec<&str> = line.splitn(2, ':').collect();
     if parts.len() == 2 {
@@ -782,6 +852,7 @@ fn parse_proc_line(line: &str) -> Option<(String, String)> {
     }
 }
 
+/// アプリケーション起動時のコマンドラインヘルプ（`-h` または `--help` 指定時）を標準出力に表示する。
 fn print_help() {
     println!("MyNMON v{}", env!("CARGO_PKG_VERSION"));
     println!("A lightweight, cross-platform CLI system monitor inspired by nmon.");
