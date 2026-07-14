@@ -104,7 +104,10 @@ The compiled binary will be available at `target/release/MyNMON` (or `target/rel
 ├── README.md             # Project overview (English)
 ├── README.ja.md          # Project overview (Japanese)
 ├── src/
-│   └── main.rs           # Core application source code
+│   ├── main.rs           # Entry point and main event loop control
+│   ├── state.rs          # Application state definition (MonitorState)
+│   ├── ui.rs             # UI and section rendering logic
+│   └── utils.rs          # Time formatting, padding, and ASCII bar utilities
 └── docs/
     ├── SPEC.md           # System Specification (Japanese)
     ├── DIAGRAM.md        # System Architecture Diagram (Japanese)
