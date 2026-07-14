@@ -71,10 +71,10 @@ graph TD
         NetInst["Networks (Rx/Tx bytes)"]
     end
 
-    subgraph "MyNMON Logic"
-        State["MonitorState (show_cpu, show_mem, etc.)"]
-        Draw["draw_ui Function"]
-        AscBar["get_ascii_bar (ASCII Bar Engine)"]
+    subgraph "MyNMON Modules"
+        State["state::MonitorState (show_cpu, show_mem, etc.)"]
+        Draw["ui::draw_ui (UI Rendering Engine)"]
+        AscBar["utils::get_ascii_bar (ASCII Bar Engine)"]
     end
 
     subgraph "crossterm Crate (Rendering)"
