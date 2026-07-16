@@ -2,25 +2,33 @@
 
 このプロジェクトのすべての重要な変更は、このファイルに記録されます。
 
+## [0.5.2] - 2026-07-16
+
+### 変更
+- **ドキュメント命名規則の統一 (大文字スネークケース化)**:
+  - ドキュメントファイル名に一貫性を持たせるため、アッパーキャメルケース（または混在）のファイルを大文字スネークケース (UPPER_SNAKE_CASE) に統一。
+  - 対象: `docs/Architecture.md` -> `docs/ARCHITECTURE.md`、`docs/Todo.md` -> `docs/TODO.md`、`.agents/Instructions.md` -> `.agents/INSTRUCTIONS.md`。
+  - これに伴い、`AGENTS.md`、`INSTRUCTIONS.md`、`docs/ARCHITECTURE.md` 内の相対パスおよびファイル名参照を更新。
+
 ## [0.5.1] - 2026-07-16
 
 ### 追加
-- **システム設計書 (`docs/Architecture.md`) の新規作成**:
+- **システム設計書 (`docs/ARCHITECTURE.md`) の新規作成**:
   - システムの概要、目的、採用技術スタック、ディレクトリ構造の設計意図、およびモジュール間のデータフロー（プロセス差分検知やフリッカーレス描画等）を明文化。
-- **AI向け開発指示書 (`.agents/Instructions.md`) の新規作成**:
+- **AI向け開発指示書 (`.agents/INSTRUCTIONS.md`) の新規作成**:
   - AIがコード修正や機能追加を行う際に遵守すべき命名規則、例外処理（パニック回避）のエラーハンドリング方針、関心の分離に基づくモジュール分割基準、およびAI出力フォーマットの制約を定義。
-- **タスク管理書 (`Todo.md`) の新規作成**:
+- **タスク管理書 (`docs/TODO.md`) の新規作成**:
   - 現在までに実装済みの機能（Done）、リフレッシュ間隔のミリ秒対応などの直近タスク（Todo）、および他プラットフォーム対応やGPU監視などの将来提案（Backlog）を構造化して管理。
 
 ### 変更
 - **開発ガイドライン (`.agents/AGENTS.md`) のリファクタリング**:
   - デスクトップアプリ（eframe/egui等）固有の不要なルール（影・枠の削除、ドラッグ操作など）を削除。
   - Crosstermを用いたCUIアプリ特有の画面保護およびちらつき防止ルールを追加。
-  - 新規作成したドキュメント群（`Architecture.md`、`Instructions.md`、`Todo.md`）の自動更新ルールを追加。
+  - 新規作成したドキュメント群（`ARCHITECTURE.md`、`INSTRUCTIONS.md`、`TODO.md`）の自動更新ルールを追加。
 - **ドキュメント類の配置整理**:
-  - タスク管理書 `Todo.md` を `docs/Todo.md` に移動。
-  - AI向け開発指示書 `Instructions.md` を `.agents/Instructions.md` に配置。
-  - これに伴い、`AGENTS.md`、`Instructions.md`、`docs/Architecture.md` 内の相対パスやディレクトリツリー図の参照を更新。
+  - タスク管理書 `TODO.md` を `docs/TODO.md` に移動。
+  - AI向け開発指示書 `INSTRUCTIONS.md` を `.agents/INSTRUCTIONS.md` に配置。
+  - これに伴い、`AGENTS.md`、`INSTRUCTIONS.md`、`docs/ARCHITECTURE.md` 内の相対パスやディレクトリツリー図の参照を更新。
 
 ---
 
