@@ -1,14 +1,10 @@
+use crate::state::MonitorState;
+#[allow(unused_imports)]
+use crate::utils::{format_uptime, get_ascii_bar, pad_or_truncate};
+use crossterm::{cursor, execute, style::Stylize, terminal};
 use std::io::{self, Write};
 use std::time::Duration;
 use sysinfo::{Disks, Networks, System};
-use crossterm::{
-    cursor,
-    execute,
-    style::Stylize,
-    terminal,
-};
-use crate::state::MonitorState;
-use crate::utils::{format_uptime, pad_or_truncate, get_ascii_bar};
 
 /// 指定したライター（標準出力等）へフォーマットされた文字列を出力し、
 /// 行末までをクリアしたうえで改行するヘルパーマクロ。
@@ -23,9 +19,10 @@ macro_rules! w_line {
 }
 
 /// システム情報および監視状態に基づき、ターミナル画面全体を描画する。
-/// 
+///
 /// ターミナルサイズが 80x20 未満の場合はエラーメッセージを表示します。
 /// また、画面のちらつきを防止するため、全画面クリアではなくカーソルを左上に移動して上書き描画を行います。
+#[allow(unused_variables)]
 pub fn draw_ui<W: Write>(
     w: &mut W,
     sys: &System,
@@ -55,37 +52,63 @@ pub fn draw_ui<W: Write>(
     draw_status_bar(w, width, sys, state)?;
 
     // すべてのセクションが非表示の場合はウェルカム/ガイド画面を表示
-    let all_hidden = !state.show_cpu_total
-        && !state.show_cpu_cores
-        && !state.show_mem
-        && !state.show_disk
-        && !state.show_net
-        && !state.show_proc
-        && !state.show_diff;
+    #[allow(unused_mut)]
+    let mut all_hidden = true;
+    #[cfg(feature = "cpu")]
+    if state.show_cpu_total || state.show_cpu_cores {
+        all_hidden = false;
+    }
+    #[cfg(feature = "mem")]
+    if state.show_mem {
+        all_hidden = false;
+    }
+    #[cfg(feature = "disk")]
+    if state.show_disk {
+        all_hidden = false;
+    }
+    #[cfg(feature = "net")]
+    if state.show_net {
+        all_hidden = false;
+    }
+    #[cfg(feature = "proc")]
+    if state.show_proc {
+        all_hidden = false;
+    }
+    #[cfg(feature = "diff")]
+    if state.show_diff {
+        all_hidden = false;
+    }
 
     if all_hidden {
         draw_welcome_screen(w)?;
     }
 
     // 有効化された各セクションを描画
+    #[cfg(feature = "cpu")]
     if state.show_cpu_total {
         draw_cpu_total(w, sys)?;
     }
+    #[cfg(feature = "cpu")]
     if state.show_cpu_cores {
         draw_cpu_cores(w, sys)?;
     }
+    #[cfg(feature = "mem")]
     if state.show_mem {
         draw_memory(w, sys)?;
     }
+    #[cfg(feature = "disk")]
     if state.show_disk {
         draw_disk(w, disks)?;
     }
+    #[cfg(feature = "net")]
     if state.show_net {
         draw_network(w, networks)?;
     }
+    #[cfg(feature = "proc")]
     if state.show_proc {
         draw_processes(w, sys, state)?;
     }
+    #[cfg(feature = "diff")]
     if state.show_diff {
         draw_diff_log(w, state)?;
     }
@@ -98,7 +121,7 @@ pub fn draw_ui<W: Write>(
 }
 
 /// ホスト名、OS名、カーネルバージョン、アップタイム、更新間隔を表示するヘッダー部を描画する。
-/// 
+///
 /// ターミナル幅（`width`）に応じて表示する情報を調整し、行の折り返しを防ぎます。
 pub fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::Result<()> {
     let hostname = System::host_name().unwrap_or_else(|| "Unknown".to_string());
@@ -147,23 +170,51 @@ pub fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::
 
 /// 操作可能なキーショートカットの案内（ヘルプ行）を描画する。
 pub fn draw_help<W: Write>(w: &mut W) -> io::Result<()> {
+    let mut shortcuts: Vec<String> = Vec::new();
+    #[cfg(feature = "cpu")]
+    shortcuts.push("[C]:CPU-Total  [c]:CPU-Cores".green().to_string());
+    #[cfg(feature = "mem")]
+    shortcuts.push("[m]:Mem".green().to_string());
+    #[cfg(feature = "disk")]
+    shortcuts.push("[d]:Disk".green().to_string());
+    #[cfg(feature = "net")]
+    shortcuts.push("[n]:Net".green().to_string());
+    #[cfg(feature = "proc")]
+    shortcuts.push("[p]:Proc".green().to_string());
+    #[cfg(feature = "diff")]
+    shortcuts.push("[g]:DiffLog".green().to_string());
+
+    let shortcuts_str = if shortcuts.is_empty() {
+        String::new()
+    } else {
+        format!("{} | ", shortcuts.join("  "))
+    };
+
+    let filter_str = if cfg!(any(feature = "proc", feature = "diff")) {
+        format!("{} | ", "[f]:Filter".yellow().bold())
+    } else {
+        String::new()
+    };
+
     w_line!(
         w,
-        " {} | {} | {} | {} to quit",
-        "[C]:CPU-Total  [c]:CPU-Cores  [m]:Mem  [d]:Disk  [n]:Net  [p]:Proc  [g]:DiffLog".green(),
-        "[f]:Filter".yellow().bold(),
+        " {}{}{}{} to quit",
+        shortcuts_str,
+        filter_str,
         "[r]:Interval".cyan().bold(),
-        "[q]".red().bold()
+        "  [q]".red().bold()
     )
 }
 
 /// プロセスフィルター入力、更新間隔変更入力、または現在のフィルター状態を表示するステータスバーを描画する。
+#[allow(unused_variables)]
 pub fn draw_status_bar<W: Write>(
     w: &mut W,
     width: u16,
     sys: &System,
     state: &MonitorState,
 ) -> io::Result<()> {
+    #[cfg(any(feature = "proc", feature = "diff"))]
     if state.is_filtering {
         w_line!(
             w,
@@ -175,7 +226,10 @@ pub fn draw_status_bar<W: Write>(
             state.filter_query.clone().underlined()
         )?;
         w_line!(w, "{}", "-".repeat(width as usize).dark_grey())?;
-    } else if state.is_setting_interval {
+        return Ok(());
+    }
+
+    if state.is_setting_interval {
         w_line!(
             w,
             "{} {}",
@@ -186,7 +240,11 @@ pub fn draw_status_bar<W: Write>(
             state.interval_input.clone().underlined()
         )?;
         w_line!(w, "{}", "-".repeat(width as usize).dark_grey())?;
-    } else if !state.filter_query.is_empty() {
+        return Ok(());
+    }
+
+    #[cfg(any(feature = "proc", feature = "diff"))]
+    if !state.filter_query.is_empty() {
         // すべてのプロセス名からマッチする件数をカウント
         let all_proc_names = sys
             .processes()
@@ -204,9 +262,10 @@ pub fn draw_status_bar<W: Write>(
             matches_count.to_string().yellow().bold()
         )?;
         w_line!(w, "{}", "-".repeat(width as usize).dark_grey())?;
-    } else {
-        w_line!(w, "{}", "=".repeat(width as usize).grey())?;
+        return Ok(());
     }
+
+    w_line!(w, "{}", "=".repeat(width as usize).grey())?;
     Ok(())
 }
 
@@ -231,41 +290,49 @@ pub fn draw_welcome_screen<W: Write>(w: &mut W) -> io::Result<()> {
         "  {}",
         "--- Interactive Keys to Show Sections ---".bold().yellow()
     )?;
+    #[cfg(feature = "cpu")]
     w_line!(
         w,
         "    {} : Toggle Total CPU utilization display",
         "C".cyan().bold()
     )?;
+    #[cfg(feature = "cpu")]
     w_line!(
         w,
         "    {} : Toggle Individual CPU Core utilization display",
         "c".cyan().bold()
     )?;
+    #[cfg(feature = "mem")]
     w_line!(
         w,
         "    {} : Toggle Memory allocation display",
         "m".cyan().bold()
     )?;
+    #[cfg(feature = "disk")]
     w_line!(
         w,
         "    {} : Toggle Disk mounts & space display",
         "d".cyan().bold()
     )?;
+    #[cfg(feature = "net")]
     w_line!(
         w,
         "    {} : Toggle Network interface speed display",
         "n".cyan().bold()
     )?;
+    #[cfg(feature = "proc")]
     w_line!(
         w,
         "    {} : Toggle Top processes display (also 't' key)",
         "p".cyan().bold()
     )?;
+    #[cfg(feature = "diff")]
     w_line!(
         w,
         "    {} : Toggle Process Spawn/Exit history log (also 'l' key)",
         "g".cyan().bold()
     )?;
+    #[cfg(any(feature = "proc", feature = "diff"))]
     w_line!(
         w,
         "    {} : Search/Filter processes by name (Enter/Esc to exit)",
@@ -294,6 +361,7 @@ pub fn draw_welcome_screen<W: Write>(w: &mut W) -> io::Result<()> {
 }
 
 /// 全体のCPU使用率を取得し、ASCIIのプログレスバーを交えて描画する。
+#[cfg(feature = "cpu")]
 pub fn draw_cpu_total<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     let global_cpu = sys.global_cpu_info();
     let load = global_cpu.cpu_usage();
@@ -316,6 +384,7 @@ pub fn draw_cpu_total<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
 }
 
 /// 個々のCPUコアの使用率を個別に取得し、それぞれASCIIプログレスバーとともに描画する。
+#[cfg(feature = "cpu")]
 pub fn draw_cpu_cores<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     w_line!(
         w,
@@ -346,6 +415,7 @@ pub fn draw_cpu_cores<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
 
 /// 物理メモリ（RAM）およびスワップ領域（Windowsの場合はページファイル）の
 /// 総量、使用量、空き容量を取得し、ASCIIバーとあわせて描画する。
+#[cfg(feature = "mem")]
 pub fn draw_memory<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     let total_mem = sys.total_memory() as f64 / 1024.0 / 1024.0;
     let used_mem = sys.used_memory() as f64 / 1024.0 / 1024.0;
@@ -403,6 +473,7 @@ pub fn draw_memory<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
 }
 
 /// マウントされている各ディスクのファイルシステム、空き容量、総量、および使用率を描画する。
+#[cfg(feature = "disk")]
 pub fn draw_disk<W: Write>(w: &mut W, disks: &Disks) -> io::Result<()> {
     w_line!(w, "{}", "--- Disk Mounts & Space ---".bold().yellow())?;
     for disk in disks.list() {
@@ -425,6 +496,7 @@ pub fn draw_disk<W: Write>(w: &mut W, disks: &Disks) -> io::Result<()> {
 }
 
 /// 各ネットワークインターフェースのデータの受信速度（Rx）および送信速度（Tx）をKB/s単位で描画する。
+#[cfg(feature = "net")]
 pub fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> {
     w_line!(
         w,
@@ -451,8 +523,9 @@ pub fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> 
 }
 
 /// プロセス一覧をCPU使用率順にソートし、上位8プロセスを表示する。
-/// 
+///
 /// フィルタークエリが設定されている場合は、プロセス名にクエリが含まれるもののみを抽出します。
+#[cfg(feature = "proc")]
 pub fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -> io::Result<()> {
     w_line!(
         w,
@@ -499,8 +572,9 @@ pub fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -
 }
 
 /// プロセスの起動（+）および終了（-）の履歴ログを直近10件表示する。
-/// 
+///
 /// フィルタークエリが設定されている場合は、ログ文字列にクエリが含まれるもののみを表示します。
+#[cfg(feature = "diff")]
 pub fn draw_diff_log<W: Write>(w: &mut W, state: &MonitorState) -> io::Result<()> {
     w_line!(
         w,

@@ -1,5 +1,5 @@
 /// システムの起動時間（秒）を、日・時間・分・秒の読みやすい形式の文字列にフォーマットする。
-/// 
+///
 /// 1日以上の場合は `Xd HH:MM:SS`、1日未満の場合は `HH:MM:SS` となります。
 pub fn format_uptime(uptime_secs: u64) -> String {
     let days = uptime_secs / 86400;
@@ -14,8 +14,9 @@ pub fn format_uptime(uptime_secs: u64) -> String {
 }
 
 /// 全角・半角を考慮した文字幅（半角=1, 全角=2）で、文字列を指定された幅にパディングまたは切り詰める。
-/// 
+///
 /// 指定幅を超えた部分は切り捨てられ、満たない部分はスペースで埋められます。
+#[allow(dead_code)]
 pub fn pad_or_truncate(s: &str, width: usize) -> String {
     let mut current_width = 0;
     let mut result = String::new();
@@ -37,7 +38,7 @@ pub fn pad_or_truncate(s: &str, width: usize) -> String {
 }
 
 /// パーセンテージと幅に基づいて、ASCIIで表現されたプログレスバー（例: `[====>     ]`）を生成する。
-/// 
+///
 /// # 引数
 /// - `percent`: 割合（0.0 から 100.0 の範囲にクランプされます）
 /// - `width`: バーの文字幅
@@ -80,13 +81,21 @@ pub fn print_help() {
     println!("  -v, --version  Print version information");
     println!();
     println!("Interactive Keys (while running):");
+    #[cfg(feature = "cpu")]
     println!("  C  Toggle Total CPU utilization display");
+    #[cfg(feature = "cpu")]
     println!("  c  Toggle Individual CPU Core utilization display");
+    #[cfg(feature = "mem")]
     println!("  m  Toggle Memory allocation display");
+    #[cfg(feature = "disk")]
     println!("  d  Toggle Disk mounts & space display");
+    #[cfg(feature = "net")]
     println!("  n  Toggle Network interface speed display");
+    #[cfg(feature = "proc")]
     println!("  p  Toggle Top processes display (also 't' key)");
+    #[cfg(feature = "diff")]
     println!("  g  Toggle Process Spawn/Exit history log (also 'l' key)");
+    #[cfg(any(feature = "proc", feature = "diff"))]
     println!("  f  Search/Filter processes by name (Enter/Esc to exit search)");
     println!("  r  Set screen refresh interval in seconds (Enter/Esc to save/cancel)");
     println!("  q  Quit the application (also 'Esc' key)");

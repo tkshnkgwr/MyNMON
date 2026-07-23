@@ -87,13 +87,21 @@ parent_directory/
 cargo run --release
 ```
 
-実行バイナリのみを作成する場合：
-
-```bash
-cargo build --release
-```
-
 ビルドされたバイナリは `target/release/MyNMON`（Windowsの場合は `target/release/MyNMON.exe`）に出力されます。
+
+### Cargo Features (カスタムビルド)
+
+Cargo Features を利用することで、特定機能のみを有効化した超軽量バイナリを構築可能です。
+
+- **フル機能ビルド (デフォルト)**:
+  ```bash
+  cargo build --release
+  ```
+- **CPUとメモリ監視のみの最小構成ビルド (サイズ約 324 KB)**:
+  ```bash
+  cargo build --release --no-default-features --features "cpu,mem"
+  ```
+
 
 ## ディレクトリ構成
 
@@ -102,17 +110,27 @@ cargo build --release
 ├── Cargo.toml            # プロジェクト設定および依存ライブラリ設定
 ├── LICENSE               # MITライセンス
 ├── README.md             # プロジェクト概要（英語版）
-├── README.ja.md          # プロジェクト概要（日本語版・本ファイル）
+├── README_JA.md          # プロジェクト概要（日本語版・本ファイル）
 ├── src/
 │   ├── main.rs           # エントリポイントおよびメインループ制御
 │   ├── state.rs          # アプリケーション状態管理（MonitorState）
 │   ├── ui.rs             # 画面全体および個別セクションの描画処理
 │   └── utils.rs          # 各種計算、フォーマットなどのユーティリティ
 └── docs/
-    ├── SPEC.md           # システム設計仕様書（日本語）
-    ├── DIAGRAM.md        # システム構成図（日本語）
-    ├── FOOTPRINTS.md     # バイナリサイズ・メモリ使用量測定レポート（日本語）
-    └── TEST_REPORT.md    # 動作検証・テストレポート（日本語）
+    ├── ja/               # 日本語ドキュメント
+    │   ├── SPEC.md
+    │   ├── ARCHITECTURE.md
+    │   ├── DIAGRAM.md
+    │   ├── FOOTPRINTS.md
+    │   ├── TODO.md
+    │   └── TEST_REPORT.md
+    └── en/               # 英語ドキュメント
+        ├── SPEC.md
+        ├── ARCHITECTURE.md
+        ├── DIAGRAM.md
+        ├── FOOTPRINTS.md
+        ├── TODO.md
+        └── TEST_REPORT.md
 ```
 
 ## リリース最適化設定

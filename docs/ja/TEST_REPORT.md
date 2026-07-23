@@ -1,5 +1,7 @@
 # テスト実施報告書 (TEST_REPORT.md)
 
+[English](../en/TEST_REPORT.md) | **日本語版**
+
 本報告書は、`MyNMON` に対して実施したビルド検証、自動テスト、および手動による機能・CUI操作・コマンドラインオプションの検証結果をまとめたものです。
 
 ---
@@ -19,16 +21,20 @@
 
 ---
 
-## 2. 自動テスト結果
+## 2. 自動テストおよびビルド検証結果
 
-`cargo test` を使用した単体テストの実行結果です。
+Cargo Features の導入に伴い、各 Feature の組み合わせにおけるビルドおよび単体テストの実行結果です。
 
-- **コマンド**: `cargo test`
-- **結果**: **PASS (1件成功、0件失敗)**
+| 検証コマンド | 対象 Feature | 結果 | 備考 |
+| :--- | :--- | :---: | :--- |
+| `cargo test --all-features` | 全機能 (`cpu`, `mem`, `disk`, `net`, `proc`, `diff`) | **PASS** | 単体テスト成功、全機能正常ビルド |
+| `cargo test --no-default-features --features "cpu,mem"` | 部分機能 (`cpu`, `mem`) | **PASS** | 最小構成用フラグで正常ビルド・テスト成功 |
+| `cargo test --no-default-features` | なし (共通ヘッダー・ヘルプのみ) | **PASS** | 依存機能ゼロ状態での正常ビルド・テスト成功 |
+| `cargo doc --no-deps` | ドキュメント生成 | **PASS** | Rustdoc コメントの整合性確認、警告ゼロ |
 
 ```text
 running 1 test
-test tests::test_get_ascii_bar ... ok
+test utils::tests::test_get_ascii_bar ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 ```

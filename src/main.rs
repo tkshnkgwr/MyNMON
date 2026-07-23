@@ -1,8 +1,8 @@
 //! # MyNMON
-//! 
+//!
 //! `MyNMON` は、Windows および Linux 環境に対応した超軽量な CUI システムモニターです。
 //! 伝統的な `nmon` にインスパイアされており、ターミナル上でリアルタイムにシステムの稼働状況を監視できます。
-//! 
+//!
 //! ## 主な機能
 //! - CPU使用率の表示（全体およびコア個別）
 //! - メモリおよびスワップ領域の割り当て状況表示
@@ -23,8 +23,7 @@ use crossterm::{
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::{
-    io,
-    thread,
+    io, thread,
     time::{Duration, Instant},
 };
 use sysinfo::{Disks, Networks, System};
@@ -32,7 +31,7 @@ use sysinfo::{Disks, Networks, System};
 use state::MonitorState;
 
 /// アプリケーションのエントリポイント。
-/// 
+///
 /// 二重起動の防止、コマンドライン引数の解析、ターミナル設定の初期化、
 /// およびメインのシステム監視イベントループの制御を行います。
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -68,19 +67,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
 
     let mut sys = System::new_all();
+    #[allow(unused_variables, unused_mut)]
     let mut disks = Disks::new_with_refreshed_list();
+    #[allow(unused_variables, unused_mut)]
     let mut networks = Networks::new_with_refreshed_list();
     let mut state = MonitorState {
+        #[cfg(feature = "cpu")]
         show_cpu_total: false,
+        #[cfg(feature = "cpu")]
         show_cpu_cores: false,
+        #[cfg(feature = "mem")]
         show_mem: false,
+        #[cfg(feature = "disk")]
         show_disk: false,
+        #[cfg(feature = "net")]
         show_net: false,
+        #[cfg(feature = "proc")]
         show_proc: false,
+        #[cfg(feature = "diff")]
         show_diff: false,
+        #[cfg(any(feature = "proc", feature = "diff"))]
         filter_query: String::new(),
+        #[cfg(any(feature = "proc", feature = "diff"))]
         is_filtering: false,
+        #[cfg(feature = "diff")]
         last_process_list: String::new(),
+        #[cfg(feature = "diff")]
         spawn_exit_log: Vec::new(),
         tick_rate: Duration::from_millis(1000),
         is_setting_interval: false,
@@ -96,10 +108,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         // 各種メトリクスを更新
         sys.refresh_all();
+        #[cfg(feature = "disk")]
         disks.refresh();
+        #[cfg(feature = "net")]
         networks.refresh();
 
         // common_lib::compute_diff を使用したプロセスの変更検知
+        #[cfg(feature = "diff")]
         {
             let mut current_processes: Vec<_> = sys.processes().values().collect();
             current_processes.sort_by_key(|p| p.pid().as_u32());
@@ -152,7 +167,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == event::KeyEventKind::Press {
+                    #[allow(unused_mut)]
+                    let mut handled_filter = false;
+                    #[cfg(any(feature = "proc", feature = "diff"))]
                     if state.is_filtering {
+                        handled_filter = true;
                         match key.code {
                             KeyCode::Enter | KeyCode::Esc => {
                                 state.is_filtering = false;
@@ -165,49 +184,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                             _ => {}
                         }
-                    } else if state.is_setting_interval {
-                        match key.code {
-                            KeyCode::Enter => {
-                                if let Ok(secs) = state.interval_input.parse::<u64>() {
-                                    if secs >= 1 {
-                                        state.tick_rate = Duration::from_secs(secs);
+                    }
+
+                    if !handled_filter {
+                        if state.is_setting_interval {
+                            match key.code {
+                                KeyCode::Enter => {
+                                    if let Ok(secs) = state.interval_input.parse::<u64>() {
+                                        if secs >= 1 {
+                                            state.tick_rate = Duration::from_secs(secs);
+                                        }
                                     }
+                                    state.is_setting_interval = false;
                                 }
-                                state.is_setting_interval = false;
+                                KeyCode::Esc => {
+                                    state.is_setting_interval = false;
+                                }
+                                KeyCode::Backspace => {
+                                    state.interval_input.pop();
+                                }
+                                KeyCode::Char(c) if c.is_numeric() => {
+                                    state.interval_input.push(c);
+                                }
+                                _ => {}
                             }
-                            KeyCode::Esc => {
-                                state.is_setting_interval = false;
+                        } else {
+                            match key.code {
+                                KeyCode::Char('q') | KeyCode::Esc => break,
+                                #[cfg(feature = "cpu")]
+                                KeyCode::Char('c') => state.show_cpu_cores = !state.show_cpu_cores,
+                                #[cfg(feature = "cpu")]
+                                KeyCode::Char('C') => state.show_cpu_total = !state.show_cpu_total,
+                                #[cfg(feature = "mem")]
+                                KeyCode::Char('m') => state.show_mem = !state.show_mem,
+                                #[cfg(feature = "disk")]
+                                KeyCode::Char('d') => state.show_disk = !state.show_disk,
+                                #[cfg(feature = "net")]
+                                KeyCode::Char('n') => state.show_net = !state.show_net,
+                                #[cfg(feature = "proc")]
+                                KeyCode::Char('p') | KeyCode::Char('t') => {
+                                    state.show_proc = !state.show_proc
+                                }
+                                #[cfg(feature = "diff")]
+                                KeyCode::Char('g') | KeyCode::Char('l') => {
+                                    state.show_diff = !state.show_diff
+                                }
+                                #[cfg(any(feature = "proc", feature = "diff"))]
+                                KeyCode::Char('f') => {
+                                    state.is_filtering = true;
+                                }
+                                KeyCode::Char('r') => {
+                                    state.interval_input = (state.tick_rate.as_secs()).to_string();
+                                    state.is_setting_interval = true;
+                                }
+                                _ => {}
                             }
-                            KeyCode::Backspace => {
-                                state.interval_input.pop();
-                            }
-                            KeyCode::Char(c) if c.is_numeric() => {
-                                state.interval_input.push(c);
-                            }
-                            _ => {}
-                        }
-                    } else {
-                        match key.code {
-                            KeyCode::Char('q') | KeyCode::Esc => break,
-                            KeyCode::Char('c') => state.show_cpu_cores = !state.show_cpu_cores,
-                            KeyCode::Char('C') => state.show_cpu_total = !state.show_cpu_total,
-                            KeyCode::Char('m') => state.show_mem = !state.show_mem,
-                            KeyCode::Char('d') => state.show_disk = !state.show_disk,
-                            KeyCode::Char('n') => state.show_net = !state.show_net,
-                            KeyCode::Char('p') | KeyCode::Char('t') => {
-                                state.show_proc = !state.show_proc
-                            }
-                            KeyCode::Char('g') | KeyCode::Char('l') => {
-                                state.show_diff = !state.show_diff
-                            }
-                            KeyCode::Char('f') => {
-                                state.is_filtering = true;
-                            }
-                            KeyCode::Char('r') => {
-                                state.interval_input = (state.tick_rate.as_secs()).to_string();
-                                state.is_setting_interval = true;
-                            }
-                            _ => {}
                         }
                     }
                 }

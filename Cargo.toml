@@ -18,3 +18,12 @@ codegen-units = 1
 panic = 'abort'
 strip = true
 
+[features]
+default = ["cpu", "mem", "disk", "net", "proc", "diff"]
+cpu = []
+mem = []
+disk = []
+net = []
+proc = []
+diff = ["proc"]
+

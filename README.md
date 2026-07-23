@@ -1,6 +1,6 @@
 # MyNMON
 
-[日本語 (Japanese)](README.ja.md)
+[日本語 (Japanese)](README_JA.md)
 
 ![CI Status](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)
 ![Latest Release](https://img.shields.io/github/v/release/tkshnkgwr/MyNMON)
@@ -87,13 +87,21 @@ Clone this repository and run the following command in the project directory:
 cargo run --release
 ```
 
-To build a standalone executable:
-
-```bash
-cargo build --release
-```
-
 The compiled binary will be available at `target/release/MyNMON` (or `target/release/MyNMON.exe` on Windows).
+
+### Cargo Features (Custom Build)
+
+You can use Cargo Features to build lightweight binaries with only specific monitoring components:
+
+- **Full Build (Default)**:
+  ```bash
+  cargo build --release
+  ```
+- **Minimal Build (CPU & Memory only, ~324 KB)**:
+  ```bash
+  cargo build --release --no-default-features --features "cpu,mem"
+  ```
+
 
 ## Directory Structure
 
@@ -102,17 +110,27 @@ The compiled binary will be available at `target/release/MyNMON` (or `target/rel
 ├── Cargo.toml            # Project configuration and dependency settings
 ├── LICENSE               # MIT License
 ├── README.md             # Project overview (English)
-├── README.ja.md          # Project overview (Japanese)
+├── README_JA.md          # Project overview (Japanese)
 ├── src/
 │   ├── main.rs           # Entry point and main event loop control
 │   ├── state.rs          # Application state definition (MonitorState)
 │   ├── ui.rs             # UI and section rendering logic
 │   └── utils.rs          # Time formatting, padding, and ASCII bar utilities
 └── docs/
-    ├── SPEC.md           # System Specification (Japanese)
-    ├── DIAGRAM.md        # System Architecture Diagram (Japanese)
-    ├── FOOTPRINTS.md     # Binary size and memory footprint report (Japanese)
-    └── TEST_REPORT.md    # Verification and testing report (Japanese)
+    ├── ja/               # Japanese Documentation
+    │   ├── SPEC.md
+    │   ├── ARCHITECTURE.md
+    │   ├── DIAGRAM.md
+    │   ├── FOOTPRINTS.md
+    │   ├── TODO.md
+    │   └── TEST_REPORT.md
+    └── en/               # English Documentation
+        ├── SPEC.md
+        ├── ARCHITECTURE.md
+        ├── DIAGRAM.md
+        ├── FOOTPRINTS.md
+        ├── TODO.md
+        └── TEST_REPORT.md
 ```
 
 ## Optimization Settings
