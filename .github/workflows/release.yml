@@ -33,6 +33,9 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+
       # 1. CLI版のビルド
       - name: Build CLI release
         run: cargo build --release --verbose
