@@ -50,6 +50,7 @@ The system is a single executable binary that operates on a single-threaded even
 ```
 
 ### Key Libraries and Roles
+
 - **`sysinfo`**: Obtains metrics for hardware, processes, OS, networks, and disks via an OS-independent abstract API. It contains platform-specific implementations such as the Windows API and the Linux `/proc` filesystem.
 - **`crossterm`**: Manages terminal alternate screens, cursor visibility, raw mode control, keyboard event monitoring, and terminal control sequences.
 
@@ -58,7 +59,9 @@ The system is a single executable binary that operates on a single-threaded even
 ## 3. Functional Requirements
 
 ### 3.1 Common Header Display
+
 The top line of the screen always displays basic system information and status. To prevent layout corruption (unwanted line wrapping), items are dynamically omitted based on the current terminal width.
+
 - **Full View (Width >= 105 chars)**: Program Name & Version (e.g., `MyNMON v0.5.0`) | Host: hostname | OS: OS Name | Kernel: Kernel Version | Uptime: Uptime | Interval: Refresh Interval
 - **Medium View (Width 90–104 chars)**: Hides the Kernel Version, displaying the rest.
 - **Small View (Width 80–89 chars)**: Hides the Kernel Version and OS Name, displaying the rest.
@@ -68,11 +71,13 @@ The top line of the screen always displays basic system information and status. 
 ### 3.2 Display and Section Control
 
 #### 3.2.1 Welcome Screen (Initial Help)
+
 On startup, all information sections are hidden by default (`false`).
 If no sections are visible, a centered "Welcome Help Screen" containing keyboard shortcut commands is displayed in a large format.
 Toggling any section ON will hide the welcome screen.
 
 #### 3.2.2 Information Monitor Sections
+
 The monitor includes the following information sections, which can be toggled on/off dynamically via keyboard shortcuts:
 
 1. **Total CPU Section (`C` Key)**:
@@ -103,44 +108,13 @@ The monitor includes the following information sections, which can be toggled on
    - Utilizes `common_lib::compute_diff` to calculate differences in process lists between frames.
    - Keeps history logs of newly spawned processes (`+ Process (PID: xx)`) and exited processes (`- Process (PID: xx)`) up to 50 entries, displaying the latest 10 at the bottom (green for spawns, red for exits).
 
----
-
-## 4. Cargo Features (Modular Compilation)
-
-`MyNMON` supports conditional compilation (`#[cfg(feature = "...")]`) via Cargo Features to compile lightweight custom binaries.
-
-### 4.1 Feature Flags
-
-| Feature | Description | Dependencies |
-| :--- | :--- | :--- |
-| `default` | Full build with all monitoring features | `["cpu", "mem", "disk", "net", "proc", "diff"]` |
-| `cpu` | Monitors total CPU and individual cores | None |
-| `mem` | Monitors physical memory and swap | None |
-| `disk` | Monitors disk mounts and space | None |
-| `net` | Monitors network interface speeds | None |
-| `proc` | Monitors top process lists and enables search/filter | None |
-| `diff` | Monitors process spawn/exit logs | `proc` |
-
-### 4.2 Custom Build Examples
-
-- **All Features (Default)**:
-  ```bash
-  cargo build --release
-  ```
-- **CPU & Memory Only**:
-  ```bash
-  cargo build --release --no-default-features --features "cpu,mem"
-  ```
-- **Processes and Diff Log Only**:
-  ```bash
-  cargo build --release --no-default-features --features "proc,diff"
-  ```
-
 ### 3.3 Keyboard Controls
+
 - Pressing `q` or `Esc` restores the terminal state (disables raw mode, exits the alternate screen, restores the cursor) and exits with exit status `0`.
 - Pressing `r` initiates the interactive refresh interval configuration. Enter a number and press `Enter` to apply a new tick rate (must be >= 1s), or press `Esc` to cancel.
 
 ### 3.4 Command-Line Options
+
 You can supply flags at startup to execute specific operations and exit immediately:
 
 1. **Help (`-h` or `--help`)**:
@@ -151,12 +125,51 @@ You can supply flags at startup to execute specific operations and exit immediat
    - Unknown arguments write an error (e.g., `Error: Unknown option '...'`) and usage directions to stderr and exit with status `1`.
 
 ### 3.5 Double-Launch Prevention (Windows Only)
+
 - Integrates `common_lib::check_single_instance` to prevent running multiple instances concurrently.
 - Checks a system-wide Named Mutex (`MyNMON_NamedMutex_Instance`) at startup. If active, prints `Error: Another instance of MyNMON is already running.` to stderr and exits with status `1`.
 
 ---
 
-## 4. Non-Functional Requirements
+## 4. Cargo Features (Modular Compilation)
+
+`MyNMON` supports conditional compilation (`#[cfg(feature = "...")]`) via Cargo Features to compile lightweight custom binaries.
+
+### 4.1 Feature Flags
+
+| Feature   | Description                                          | Dependencies                                     |
+| :-------- | :--------------------------------------------------- | :----------------------------------------------- |
+| `default` | Full build with all monitoring features              | `["cpu", "mem", "disk", "net", "proc", "diff"]` |
+| `cpu`     | Monitors total CPU and individual cores              | None                                             |
+| `mem`     | Monitors physical memory and swap                    | None                                             |
+| `disk`    | Monitors disk mounts and space                       | None                                             |
+| `net`     | Monitors network interface speeds                    | None                                             |
+| `proc`    | Monitors top process lists and enables search/filter | None                                             |
+| `diff`    | Monitors process spawn/exit logs                     | `proc`                                           |
+
+### 4.2 Custom Build Examples
+
+- **All Features (Default)**:
+
+  ```bash
+  cargo build --release
+  ```
+
+- **CPU & Memory Only**:
+
+  ```bash
+  cargo build --release --no-default-features --features "cpu,mem"
+  ```
+
+- **Processes and Diff Log Only**:
+
+  ```bash
+  cargo build --release --no-default-features --features "proc,diff"
+  ```
+
+---
+
+## 5. Non-Functional Requirements
 
 - **Update Frequency**: Refreshes metrics and redraws the UI every 1 second (1000ms) by default. The interval can be configured dynamically using the `r` key (in seconds).
 - **Latency**: Key interrupts trigger immediate UI updates and redraws without waiting for the timer tick.

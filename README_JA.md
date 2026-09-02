@@ -52,6 +52,7 @@
 - `-v`, `--version` : `Cargo.toml` から解決された動的なバージョン情報を表示して終了します。
 
 使用例：
+
 ```bash
 ./MyNMON --help
 ./MyNMON --version
@@ -73,6 +74,7 @@ git clone https://github.com/tkshnkgwr/MyNMON.git
 ```
 
 以下のようなディレクトリ構成にする必要があります：
+
 ```text
 parent_directory/
 ├── common_lib/
@@ -94,18 +96,21 @@ cargo run --release
 Cargo Features を利用することで、特定機能のみを有効化した超軽量バイナリを構築可能です。
 
 - **フル機能ビルド (デフォルト)**:
+
   ```bash
   cargo build --release
   ```
+
 - **CPUとメモリ監視のみの最小構成ビルド (サイズ約 324 KB)**:
+
   ```bash
   cargo build --release --no-default-features --features "cpu,mem"
   ```
 
-
 ## ディレクトリ構成
 
 ```text
+
 .
 ├── Cargo.toml            # プロジェクト設定および依存ライブラリ設定
 ├── LICENSE               # MITライセンス

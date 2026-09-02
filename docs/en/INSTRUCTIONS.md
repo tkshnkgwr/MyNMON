@@ -37,7 +37,8 @@ This document defines the guidelines and development standards that the AI Agent
 ## 3. Testing and Verification Policy
 
 - When adding new logic, write corresponding unit tests to maintain test coverage.
-- After making changes, run the following standard commands and verify that there are zero warnings and errors:
+- **For Markdown-only (`.md`) edits, skip Rust verification steps (`cargo fmt`, `cargo check`, `cargo test`, etc.) to respond swiftly.**
+- After making code changes (e.g., `.rs`, `Cargo.toml`), run the following standard commands and verify that there are zero warnings and errors:
   - `cargo test`
   - `cargo clippy --all-targets -- -D warnings`
   - `cargo fmt --check`

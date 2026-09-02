@@ -4,6 +4,7 @@
 > This file constraints the behavior of Claude (Cline/Roo Code etc.) in this workspace.
 
 ## 📜 Absolute System Rules (Load RULES.md)
+
 When working in this workspace, you MUST load and strictly adhere to the following global rules as the highest priority:
 
 👉 **[Global Rules (RULES.md)](./RULES.md)**

@@ -23,13 +23,16 @@ When developing, please adhere to the following basic policies:
 ## 2. Development Setup
 
 1. **Cloning the Repositories**:
+
    ```bash
    # Both repositories must be cloned under the same parent directory
    git clone https://github.com/tkshnkgwr/common_lib.git
    git clone https://github.com/tkshnkgwr/MyNMON.git
    cd MyNMON
    ```
+
 2. **Running the Application**:
+
    ```bash
    cargo run --release
    ```
@@ -39,6 +42,7 @@ When developing, please adhere to the following basic policies:
 ## 3. Commits and Pull Requests
 
 ### Commit Message Conventions
+
 Please use the Conventional Commits format for your commit messages:
 
 - `feat:` Add new feature
@@ -50,6 +54,7 @@ Please use the Conventional Commits format for your commit messages:
 - `chore:` Update build scripts or configurations
 
 ### Pull Request Checklist
+
 Before submitting a pull request, run the following commands and verify that all pass successfully:
 
 - [ ] `cargo test` (Unit tests pass)

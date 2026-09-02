@@ -169,8 +169,10 @@ pub fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::
 }
 
 /// 操作可能なキーショートカットの案内（ヘルプ行）を描画する。
+#[allow(clippy::vec_init_then_push)]
 pub fn draw_help<W: Write>(w: &mut W) -> io::Result<()> {
     let mut shortcuts: Vec<String> = Vec::new();
+
     #[cfg(feature = "cpu")]
     shortcuts.push("[C]:CPU-Total  [c]:CPU-Cores".green().to_string());
     #[cfg(feature = "mem")]

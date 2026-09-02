@@ -52,6 +52,7 @@ You can run `MyNMON` with the following command-line flags:
 - `-v`, `--version` : Print the dynamically resolved application version (from `Cargo.toml`), then exit.
 
 Example usage:
+
 ```bash
 ./MyNMON --help
 ./MyNMON --version
@@ -73,6 +74,7 @@ git clone https://github.com/tkshnkgwr/MyNMON.git
 ```
 
 Your directory structure should look like this:
+
 ```text
 parent_directory/
 ├── common_lib/
@@ -94,18 +96,21 @@ The compiled binary will be available at `target/release/MyNMON` (or `target/rel
 You can use Cargo Features to build lightweight binaries with only specific monitoring components:
 
 - **Full Build (Default)**:
+
   ```bash
   cargo build --release
   ```
+
 - **Minimal Build (CPU & Memory only, ~324 KB)**:
+
   ```bash
   cargo build --release --no-default-features --features "cpu,mem"
   ```
 
-
 ## Directory Structure
 
 ```text
+
 .
 ├── Cargo.toml            # Project configuration and dependency settings
 ├── LICENSE               # MIT License
