@@ -68,7 +68,7 @@ The table below records validation results obtained by running the compiled rele
 | **Double-Launch**   | Run two instances   | Second instance terminates with an error code of `1`.       | **PASS** | Outputs: `Error: Another instance of MyNMON is running.`|
 | **Exit**            | Press `q` or `Esc`  | Process exits immediately; terminal state is restored.      | **PASS** | Restores cursor, raw mode disabled, alternate screen off|
 | **Help Option**     | Run `--help` / `-h` | Prints help text and usage commands, then exits.            | **PASS** | Outputs option flags and key combinations.              |
-| **Version Option**  | Run `--version`/`-v`| Prints dynamic Cargo package version and exits.             | **PASS** | Outputs `MyNMON v0.6.1` with copyright and license.     |
+| **Version Option**  | Run `--version`/`-v`| Prints dynamic Cargo package version and exits.             | **PASS** | Outputs `MyNMON v0.7.0` with copyright and license.     |
 | **Invalid Option**  | Run `--invalid`     | Writes error to stderr, outputs usage, exits (status 1).    | **PASS** | Correctly catches invalid CLI arguments.                |
 | **Uptime**          | Watch header        | Uptime counter increments second by second.                 | **PASS** | Properly parses `sysinfo::System::uptime()`.            |
 | **Flicker-Free**    | Change sections     | Layout redrawing does not trigger terminal flickering.      | **PASS** | Upwards cursor resets and line-end clears function well.|

@@ -4,6 +4,20 @@
 
 このプロジェクトのすべての重要な変更は、このファイルに記録されます。
 
+## [0.7.0] - 2026-10-27
+
+### 変更
+
+- **ライセンスの変更 (MIT -> GPL-3.0-or-later)**:
+  - ソフトウェアライセンスを MIT License から **GNU General Public License v3.0 or later (GPL-3.0-or-later)** へ移行。
+  - `LICENSE` ファイルを GNU GPL v3 フルテキストに刷新。
+  - `Cargo.toml` に `license = "GPL-3.0-or-later"` を追加。
+  - `README.md` および `README_JA.md` のライセンスバッジ、ディレクトリツリー、ライセンス章を GPL-3.0-or-later に更新。
+  - CLIオプション `-v` / `--version` の出力ライセンス表記を `License: GPL-3.0-or-later` に更新。
+  - システム仕様書（`SPEC.md`）のバージョン表記および出力例を更新。
+
+---
+
 ## [0.6.1] - 2026-10-27
 
 ### 追加

@@ -6,7 +6,7 @@
 ![Latest Release](https://img.shields.io/github/v/release/tkshnkgwr/MyNMON)
 ![Rust Version](https://img.shields.io/badge/rust-1.96.0%2B-orange.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
 
 ![MyNMON Demo Screenshot](docs/images/demo.png)
 
@@ -112,7 +112,7 @@ Cargo Features を利用することで、特定機能のみを有効化した�
 ```text
 .
 ├── Cargo.toml            # プロジェクト設定および依存ライブラリ設定
-├── LICENSE               # MITライセンス
+├── LICENSE               # GPL-3.0-or-later ライセンス
 ├── README.md             # プロジェクト概要（英語版）
 ├── README_JA.md          # プロジェクト概要（日本語版・本ファイル）
 ├── src/
@@ -149,4 +149,4 @@ Cargo Features を利用することで、特定機能のみを有効化した�
 
 ## ライセンス
 
-本プロジェクトは [MIT License](LICENSE) のもとで公開されています - Copyright (c) 2026 tkshnkgwr。
+本プロジェクトは [GNU General Public License v3.0 or later (GPL-3.0-or-later)](LICENSE) のもとで公開されています - Copyright (c) 2026 tkshnkgwr。

@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         match args[1].as_str() {
             "-v" | "--version" => {
                 println!(
-                    "MyNMON v{}\nCopyright (c) 2026 tkshnkgwr\nLicense: MIT",
+                    "MyNMON v{}\nCopyright (c) 2026 tkshnkgwr\nLicense: GPL-3.0-or-later",
                     env!("CARGO_PKG_VERSION")
                 );
                 return Ok(());

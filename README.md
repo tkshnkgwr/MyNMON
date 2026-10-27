@@ -6,7 +6,7 @@
 ![Latest Release](https://img.shields.io/github/v/release/tkshnkgwr/MyNMON)
 ![Rust Version](https://img.shields.io/badge/rust-1.96.0%2B-orange.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
 
 ![MyNMON Demo Screenshot](docs/images/demo.png)
 
@@ -112,7 +112,7 @@ You can use Cargo Features to build lightweight binaries with only specific moni
 ```text
 .
 ├── Cargo.toml            # Project configuration and dependency settings
-├── LICENSE               # MIT License
+├── LICENSE               # GPL-3.0-or-later License
 ├── README.md             # Project overview (English)
 ├── README_JA.md          # Project overview (Japanese)
 ├── src/
@@ -149,4 +149,4 @@ This project includes release profile optimizations in `Cargo.toml` to minimize 
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE) - Copyright (c) 2026 tkshnkgwr.
+This project is licensed under the [GNU General Public License v3.0 or later (GPL-3.0-or-later)](LICENSE) - Copyright (c) 2026 tkshnkgwr.
