@@ -34,19 +34,36 @@ This document defines the guidelines and development standards that the AI Agent
 
 ---
 
-## 3. Testing and Verification Policy
+## 3. Documentation and Update Rules
 
-- When adding new logic, write corresponding unit tests to maintain test coverage.
-- **For Markdown-only (`.md`) edits, skip Rust verification steps (`cargo fmt`, `cargo check`, `cargo test`, etc.) to respond swiftly.**
-- After making code changes (e.g., `.rs`, `Cargo.toml`), run the following standard commands and verify that there are zero warnings and errors:
-  - `cargo test`
-  - `cargo clippy --all-targets -- -D warnings`
-  - `cargo fmt --check`
-  - `cargo doc --no-deps --document-private-items`
+When adding, modifying, or refactoring code or dependencies, keep both the **English (`docs/en/`) and Japanese (`docs/ja/`) documentation** synchronized.
+*Note: For Markdown-only (`.md`) edits, automated documentation rules and verification steps are omitted to allow prompt responses.*
+
+| Document (EN / JA)              | Role and Update Rules                                                                                                     |
+| :------------------------------ | :------------------------------------------------------------------------------------------------------------------------ |
+| `CHANGELOG.md`                  | Change history. Add date `## [X.Y.Z] - YYYY-MM-DD` and category (`### Added`, `### Changed`, etc.) with latest on top.   |
+| `SPEC.md`                       | Key bindings, CLI arguments, display rules, metrics, and technical stack definitions.                                     |
+| `DIAGRAM.md`                    | System architecture, event loop order, and data flow Mermaid diagrams.                                                   |
+| `README.md` / `README_JA.md`    | Overview, build/run steps, and prerequisites. Update on CLI option or requirement changes.                                |
+| `FOOTPRINTS.md`                 | Performance, binary size, and memory usage measurement records.                                                           |
+| `ARCHITECTURE.md`               | Architecture overview, module structure, data flows, and Cargo Features compilation boundaries.                           |
+| `INSTRUCTIONS.md`               | AI agent coding standards, error handling, modularization, and response formatting rules.                                 |
+| `TODO.md`                       | Task backlog (Done / Todo / Backlog).                                                                                     |
+| `TESTING.md` / `TEST_REPORT.md`| Test policy and execution procedures / historical verification and automated/manual test reports.                         |
+| `RELEASE.md` / `SECURITY.md`    | Release workflows / security design principles, support policy, and vulnerability reporting.                              |
+| `CONTRIBUTING.md`               | Contributor guidelines and workflow.                                                                                      |
+| Rustdoc (in-source comments)    | Detailed `///` and `//!` doc comments. Synchronize comments on any API or signature changes.                              |
 
 ---
 
-## 4. Module Separation and Refactoring Policy
+## 4. Quality Control & Verification Rules
 
 - **1,000-Line Limit Rule**:
-  - If a single program source file (e.g., `src/*.rs`) exceeds **1,000 lines**, propose and execute refactoring by splitting it into logical modules (e.g., `cpu.rs`, `mem.rs`, etc.) to maintain readability and maintainability.
+  - If a single program source file (e.g., `src/*.rs`) exceeds **1,000 lines**, propose and execute modular refactoring to maintain clean separation of concerns.
+- **Verification Workflow**:
+  - **For Markdown-only (`.md`) edits, skip Rust verification steps (`cargo fmt`, `cargo check`, `cargo test`, etc.) to respond swiftly.**
+  - When modifying source code (`.rs`, `Cargo.toml`, etc.), verify zero warnings and errors:
+    1. `cargo test`
+    2. `cargo clippy --all-targets -- -D warnings`
+    3. `cargo fmt --check`
+    4. `cargo doc --no-deps --document-private-items`

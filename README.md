@@ -110,7 +110,6 @@ You can use Cargo Features to build lightweight binaries with only specific moni
 ## Directory Structure
 
 ```text
-
 .
 ├── Cargo.toml            # Project configuration and dependency settings
 ├── LICENSE               # MIT License
@@ -150,4 +149,4 @@ This project includes release profile optimizations in `Cargo.toml` to minimize 
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE) - Copyright (c) 2026 tkshnkgwr.

@@ -25,7 +25,7 @@ Security updates are provided for the following versions:
 
 | Version                             |     Status    |
 | :---------------------------------- | :-----------: |
-| Latest Release (`v0.5.x` and later) |  ✅ Supported  |
+| Latest Release (`v0.6.x` and later) |  ✅ Supported  |
 | Older Releases                      | ❌ Unsupported |
 
 ---

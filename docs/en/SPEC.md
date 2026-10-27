@@ -62,7 +62,7 @@ The system is a single executable binary that operates on a single-threaded even
 
 The top line of the screen always displays basic system information and status. To prevent layout corruption (unwanted line wrapping), items are dynamically omitted based on the current terminal width.
 
-- **Full View (Width >= 105 chars)**: Program Name & Version (e.g., `MyNMON v0.5.0`) | Host: hostname | OS: OS Name | Kernel: Kernel Version | Uptime: Uptime | Interval: Refresh Interval
+- **Full View (Width >= 105 chars)**: Program Name & Version (e.g., `MyNMON v0.6.1`) | Host: hostname | OS: OS Name | Kernel: Kernel Version | Uptime: Uptime | Interval: Refresh Interval
 - **Medium View (Width 90–104 chars)**: Hides the Kernel Version, displaying the rest.
 - **Small View (Width 80–89 chars)**: Hides the Kernel Version and OS Name, displaying the rest.
 - **System Uptime**: Shows time elapsed since system boot in the format `Xd HH:MM:SS` (or `HH:MM:SS` if less than 24 hours), updating every second.
@@ -120,7 +120,7 @@ You can supply flags at startup to execute specific operations and exit immediat
 1. **Help (`-h` or `--help`)**:
    - Prints application usage, options, and run-time shortcuts, then exits.
 2. **Version (`-v` or `--version`)**:
-   - Prints the dynamic version resolved from `Cargo.toml` at compile-time (e.g., `MyNMON v0.5.0`), then exits.
+   - Prints the dynamic version resolved from `Cargo.toml` at compile-time, along with copyright and license notice (e.g., `MyNMON v0.6.1\nCopyright (c) 2026 tkshnkgwr\nLicense: MIT`), then exits.
 3. **Invalid Option Handling**:
    - Unknown arguments write an error (e.g., `Error: Unknown option '...'`) and usage directions to stderr and exit with status `1`.
 

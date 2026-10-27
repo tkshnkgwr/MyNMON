@@ -110,7 +110,6 @@ Cargo Features を利用することで、特定機能のみを有効化した�
 ## ディレクトリ構成
 
 ```text
-
 .
 ├── Cargo.toml            # プロジェクト設定および依存ライブラリ設定
 ├── LICENSE               # MITライセンス
@@ -150,4 +149,4 @@ Cargo Features を利用することで、特定機能のみを有効化した�
 
 ## ライセンス
 
-本プロジェクトは [MIT License](LICENSE) のもとで公開されています。
+本プロジェクトは [MIT License](LICENSE) のもとで公開されています - Copyright (c) 2026 tkshnkgwr。

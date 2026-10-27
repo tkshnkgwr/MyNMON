@@ -46,7 +46,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.len() > 1 {
         match args[1].as_str() {
             "-v" | "--version" => {
-                println!("MyNMON v{}", env!("CARGO_PKG_VERSION"));
+                println!(
+                    "MyNMON v{}\nCopyright (c) 2026 tkshnkgwr\nLicense: MIT",
+                    env!("CARGO_PKG_VERSION")
+                );
                 return Ok(());
             }
             "-h" | "--help" => {

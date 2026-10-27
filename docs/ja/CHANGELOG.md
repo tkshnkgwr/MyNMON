@@ -4,6 +4,52 @@
 
 このプロジェクトのすべての重要な変更は、このファイルに記録されます。
 
+## [0.6.1] - 2026-10-27
+
+### 追加
+
+- **AI開発ガバナンスとスキル体系の導入**:
+  - `RULES.md` による最優先絶対遵守ルール（自動コミット禁止、垂直整列、%USERPROFILE%統一、高速CLI標準利用）の一元定義。
+  - `.agents/skills/` による作業手順（`rust-verification`, `git-commit`, `markdown-table`, `vault-memo`）のスキル化。
+- **高速CLIツール標準利用原則**:
+  - `ripgrep` (`rg`)、`fd`、`jq` を最優先とする探索・抽出ルールを制定。
+
+### 変更
+
+- **バージョン・著作権・ライセンス表記の刷新**:
+  - CLIオプション `-v` / `--version` 出力に著作権（`Copyright (c) 2026 tkshnkgwr`）およびライセンス（`MIT`）表記を追加。
+  - `LICENSE` ファイルの著作権者を `tkshnkgwr` に更新。
+  - `README.md` および `README_JA.md` の主要コンテンツを完全復元し、ライセンス表記を最新化。
+
+### 修正
+
+- **ドキュメント全体の整合性修復**:
+  - `docs/` 配下の全ドキュメント（SPEC, SECURITY, INSTRUCTIONS, TEST_REPORT 等）のバージョン表記、サポートバージョン、章構成、および Markdown テーブル垂直整列を同期。
+
+---
+
+## [0.6.0] - 2026-07-23
+
+### 追加
+
+- **多言語ドキュメント体系の確立**:
+  - ドキュメントを英語版 (`docs/en/`) と日本語版 (`docs/ja/`) に完全分割し、国際化対応を強化。
+  - 開発・運用ドキュメントとして `TESTING.md`（テスト方針）、`RELEASE.md`（リリース手順書）、`CONTRIBUTING.md`（貢献ガイド）、`SECURITY.md`（セキュリティポリシー）を新設。
+- **共有ライブラリ連携および高度な監視機能**:
+  - `common_lib` 統合による Windows 上での Named Mutex 二重起動防止 (`common_lib::check_single_instance`)。
+  - プロセス検索フィルタリング機能 (`f` キー) およびプロセス起動・終了差分検知履歴ログ (`g` / `l` キー)。
+- **AI開発ガバナンスとスキル委譲**:
+  - `RULES.md` による絶対遵守ルール（自動コミット禁止、垂直整列、%USERPROFILE%統一、高速CLI標準利用）の一元管理。
+  - `.agents/skills/` による作業手順（`rust-verification`, `git-commit`, `markdown-table`, `vault-memo`）のスキル化。
+
+### 変更
+
+- **バージョン・著作権情報の更新**:
+  - コマンドライン引数 `-v` / `--version` 出力に著作権表記およびライセンスを追加。
+  - `README.md` および `README_JA.md` のライセンス・著作権表記を更新。
+
+---
+
 ## [0.5.3] - 2026-07-21
 
 ### 追加

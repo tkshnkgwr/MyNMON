@@ -4,6 +4,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2026-10-27
+
+### Added
+
+- **AI Agent Governance and Modular Skills System**:
+  - Centralized invariant rules in `RULES.md` (no automated commits, vertical table alignment, `%USERPROFILE%` path masking, fast CLI preference).
+  - Modular skills under `.agents/skills/` (`rust-verification`, `git-commit`, `markdown-table`, `vault-memo`).
+- **High-speed CLI Tool Standards**:
+  - Established standards prioritizing `ripgrep` (`rg`), `fd`, and `jq` for file and code operations.
+
+### Changed
+
+- **Version, Copyright, and License Updates**:
+  - Added copyright notice (`Copyright (c) 2026 tkshnkgwr`) and MIT license to `-v` / `--version` CLI output.
+  - Updated copyright holder to `tkshnkgwr` in `LICENSE`.
+  - Fully restored and synchronized `README.md` and `README_JA.md` documentation and license notes.
+
+### Fixed
+
+- **Global Documentation Synchronization**:
+  - Synchronized version references, support lifecycle, and vertical table formatting across all documents under `docs/` (SPEC, SECURITY, INSTRUCTIONS, TEST_REPORT, etc.).
+
+---
+
+## [0.6.0] - 2026-07-23
+
+### Added
+
+- **Bilingual Documentation Framework**:
+  - Partitioned documentation into distinct English (`docs/en/`) and Japanese (`docs/ja/`) directories.
+  - Added project operations guides: `TESTING.md`, `RELEASE.md`, `CONTRIBUTING.md`, and `SECURITY.md`.
+- **Shared Library Integration & Enhanced Monitoring**:
+  - Single instance protection on Windows via `common_lib::check_single_instance` (Named Mutex).
+  - Real-time process filtering search (`f` key) and process spawn/exit delta log (`g`/`l` keys).
+- **AI Agent Governance & Skill Delegation**:
+  - Centralized invariant rules in `RULES.md` (no automated commits, vertical table alignment, `%USERPROFILE%` path masking, fast CLI preference).
+  - Modular skills under `.agents/skills/` (`rust-verification`, `git-commit`, `markdown-table`, `vault-memo`).
+
+### Changed
+
+- **Version & Copyright Updates**:
+  - Added copyright notice and MIT license to `-v` / `--version` CLI output.
+  - Synchronized README.md and README_JA.md license notes.
+
+---
+
 ## [0.5.3] - 2026-07-21
 
 ### Added
