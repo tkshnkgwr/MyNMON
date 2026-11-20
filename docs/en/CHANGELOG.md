@@ -4,6 +4,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2026-11-20
+
+### Changed
+
+- **Dependency & Shared Crate Modernization**:
+  - Upgraded `sysinfo` from `0.30.12` to `0.40.4` and synchronized `Cargo.lock` dependencies (including `common_lib v0.4.0`).
+  - Eliminated legacy `windows v0.52` and `rayon` dependencies, reducing the full-feature release binary from ~672 KB to **~296 KB (~56% reduction)**.
+  - Unified `authors` in `Cargo.toml` to `tkshnkgwr`.
+- **Event Loop & Network Throughput Accuracy**:
+  - Decoupled metric refreshes (triggered only when `tick_rate` elapses) from keypress-triggered UI redraws for lower latency.
+  - Normalized network Rx/Tx speeds (KB/s) by actual elapsed seconds since the previous refresh.
+- **Full Documentation Synchronization**:
+  - Updated `README.md`, `README_JA.md`, and all documents under `docs/ja/` and `docs/en/` to reflect current directory layouts, footprints, architecture, and verification records.
+
+### Fixed
+
+- **Robustness & Edge-Case Fixes**:
+  - Introduced an RAII `TerminalGuard` to guarantee terminal restoration (raw mode, alternate screen, cursor visibility) even on early error returns.
+  - Prevented division-by-zero (`NaN`) when total memory or disk capacity is `0`.
+  - Replaced `partial_cmp(...).unwrap()` with `total_cmp()` in process sorting to avoid panics on `NaN`.
+  - Fixed case-sensitivity mismatch in filter match counts (`common_lib::count_occurrences`) when the filter query contains uppercase letters.
+  - Added a `width == 0` guard in `get_ascii_bar` to prevent integer underflow panics.
+  - Resolved Clippy warnings (`unused_mut`, `dead_code`) under `--no-default-features`.
+  - Added `workspaces: MyNMON` to `Swatinem/rust-cache@v2` in `.github/workflows/release.yml` for consistency with `ci.yml`.
+- **Expanded Unit Tests**:
+  - Added unit tests for `format_uptime`, `pad_or_truncate`, `parse_proc_line`, and edge cases in `get_ascii_bar` (4 tests total).
+
+---
+
 ## [0.7.0] - 2026-10-27
 
 ### Changed

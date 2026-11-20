@@ -4,7 +4,7 @@
 
 ![CI Status](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)
 ![Latest Release](https://img.shields.io/github/v/release/tkshnkgwr/MyNMON)
-![Rust Version](https://img.shields.io/badge/rust-1.96.0%2B-orange.svg)
+![Rust Version](https://img.shields.io/badge/rust-1.100.0%2B-orange.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
 
@@ -27,7 +27,7 @@
 - **画面崩れ防止（画面保護）**: ターミナルサイズが最小要件（横80文字以上、縦20行以上）を下回る場合、警告メッセージを表示して描画を自動スキップします。
 - **多重起動防止 (Windows)**: Named Mutex による Windows 上での二重起動を防止し、画面描画の競合を防ぎます。
 - **インタラクティブな制御**: キーボードショートカットで表示セクションを即座に切り替え可能です。
-- **徹底した最適化**: リリースバイナリサイズは約 324 KB、実行時のメモリ使用量は約 21.3 MB と極めて軽量です。
+- **徹底した最適化**: リリースバイナリサイズはフル機能構成で約 296 KB（CPUのみ最小構成で約 250 KB）、実行時のメモリ使用量は約 21.3 MB と極めて軽量です。
 
 ## キーボードショートカット
 
@@ -62,8 +62,8 @@
 
 ### 前提条件
 
-1. Rust および Cargo がインストールされていることを確認してください。(Rust 1.96.0 以上を推奨)
-2. 本プロジェクトは、相対パス (`../common_lib`) を通じて共有ライブラリ `common_lib` に依存しています。同一の親ディレクトリ内に両方のリポジトリをクローンする必要があります。
+1. Rust および Cargo がインストールされていることを確認してください。(Rust 1.100.0 以上を推奨)
+2. 本プロジェクトは、相対パス (`../common_lib`) を通じて共有ライブラリ `common_lib` (`v0.4.0`) に依存しています。同一の親ディレクトリ内に両方のリポジトリをクローンする必要があります。
 
 ```bash
 # 共有ライブラリをクローン
@@ -95,13 +95,19 @@ cargo run --release
 
 Cargo Features を利用することで、特定機能のみを有効化した超軽量バイナリを構築可能です。
 
-- **フル機能ビルド (デフォルト)**:
+- **フル機能ビルド (デフォルト、サイズ約 296 KB)**:
 
   ```bash
   cargo build --release
   ```
 
-- **CPUとメモリ監視のみの最小構成ビルド (サイズ約 324 KB)**:
+- **最小構成ビルド (CPU監視のみ、サイズ約 250 KB)**:
+
+  ```bash
+  cargo build --release --no-default-features --features "cpu"
+  ```
+
+- **カスタムビルド (CPUとメモリ監視のみ)**:
 
   ```bash
   cargo build --release --no-default-features --features "cpu,mem"
@@ -112,29 +118,43 @@ Cargo Features を利用することで、特定機能のみを有効化した�
 ```text
 .
 ├── Cargo.toml            # プロジェクト設定および依存ライブラリ設定
+├── CHANGELOG.md          # 変更履歴エントリポイント (EN / JA リンク)
 ├── LICENSE               # GPL-3.0-or-later ライセンス
 ├── README.md             # プロジェクト概要（英語版）
 ├── README_JA.md          # プロジェクト概要（日本語版・本ファイル）
 ├── src/
-│   ├── main.rs           # エントリポイントおよびメインループ制御
+│   ├── main.rs           # エントリポイント、TerminalGuard (RAII)、メインループ制御
 │   ├── state.rs          # アプリケーション状態管理（MonitorState）
 │   ├── ui.rs             # 画面全体および個別セクションの描画処理
-│   └── utils.rs          # 各種計算、フォーマットなどのユーティリティ
+│   └── utils.rs          # 各種計算、フォーマットなどのユーティリティおよび単体テスト
 └── docs/
+    ├── images/           # デモスクリーンショット
     ├── ja/               # 日本語ドキュメント
-    │   ├── SPEC.md
     │   ├── ARCHITECTURE.md
+    │   ├── CHANGELOG.md
+    │   ├── CONTRIBUTING.md
     │   ├── DIAGRAM.md
     │   ├── FOOTPRINTS.md
-    │   ├── TODO.md
-    │   └── TEST_REPORT.md
+    │   ├── INSTRUCTIONS.md
+    │   ├── RELEASE.md
+    │   ├── SECURITY.md
+    │   ├── SPEC.md
+    │   ├── TESTING.md
+    │   ├── TEST_REPORT.md
+    │   └── TODO.md
     └── en/               # 英語ドキュメント
-        ├── SPEC.md
         ├── ARCHITECTURE.md
+        ├── CHANGELOG.md
+        ├── CONTRIBUTING.md
         ├── DIAGRAM.md
         ├── FOOTPRINTS.md
-        ├── TODO.md
-        └── TEST_REPORT.md
+        ├── INSTRUCTIONS.md
+        ├── RELEASE.md
+        ├── SECURITY.md
+        ├── SPEC.md
+        ├── TESTING.md
+        ├── TEST_REPORT.md
+        └── TODO.md
 ```
 
 ## リリース最適化設定

@@ -73,4 +73,4 @@
 ## 4. リリース完了後の確認
 
 - GitHub Actions (CI/CD) のビルドワークフローが成功することを確認します。
-- GitHub Releaseページが自動作成され、各OS向けバイナリ（Windows, Linux, macOS 用のリリースアセット）が添付されているか確認します。
+- GitHub Releaseページが自動作成され、リリースアセット（`MyNMON-windows-x64.zip`）が添付されているか確認します。

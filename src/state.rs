@@ -37,6 +37,9 @@ pub struct MonitorState {
     pub spawn_exit_log: Vec<String>,
     /// 画面の更新レート（ティックレート）
     pub tick_rate: Duration,
+    /// 前回のメトリクス更新からの実経過時間（秒、ネットワーク速度算出用）
+    #[cfg(feature = "net")]
+    pub last_refresh_secs: f64,
     /// 現在更新間隔設定入力モードであるかどうか
     pub is_setting_interval: bool,
     /// 更新間隔入力用の一時文字列

@@ -12,7 +12,7 @@ This document outlines the testing policies, manual validation steps, and qualit
 
 Key Test Perspectives:
 
-- **Unit Tests**: Verifying algorithms such as ASCII progress bar generation logic.
+- **Unit Tests**: Verifying algorithms and edge cases including ASCII progress bar generation, uptime formatting, multibyte character width padding, and process line parsing.
 - **Section Toggling & State Management**: Ensuring that display toggles work correctly in response to key presses.
 - **CUI Integrity & Flicker Prevention**: Verifying flicker-free screen updates and size checks across various terminal sizes.
 - **Double-Launch Prevention (Windows Only)**: Verifying Named Mutex-based detection of parallel instances.
@@ -41,11 +41,13 @@ cargo test test_get_ascii_bar
 Before finalizing any code modifications, verify that the following standard commands pass without any warnings or errors:
 
 ```bash
-# 1. Run unit tests across all features
+# 1. Run unit tests across all features and minimal builds
 cargo test --all-features
+cargo test --no-default-features
 
 # 2. Static Analysis (Clippy)
 cargo clippy --all-targets -- -D warnings
+cargo clippy --no-default-features -- -D warnings
 
 # 3. Check Code Formatting
 cargo fmt --check

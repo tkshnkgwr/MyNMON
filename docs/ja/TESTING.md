@@ -12,7 +12,7 @@
 
 主要なテスト観点：
 
-- **ユニットテスト**: アスキーバー生成ロジックなどのアルゴリズム検証。
+- **ユニットテスト**: アスキーバー生成、稼働時間フォーマット、マルチバイト文字幅パディング、プロセス行解析などのアルゴリズムおよびエッジケース検証。
 - **画面トグルと状態制御**: 各キー入力によるセクション表示切り替えの正確性。
 - **CUI 整合性とフリッカー**: 異なるターミナルサイズやリフレッシュ頻度でのちらつき抑制や画面崩れ防止。
 - **多重起動防止 (Windows専用)**: Named Mutex による二重起動検知。
@@ -41,11 +41,13 @@ cargo test test_get_ascii_bar
 コード変更完了時には、以下の標準コマンドが全てエラー・警告なしで合格することを確認します：
 
 ```bash
-# 1. ユニットテスト実行
+# 1. ユニットテスト実行（全機能および最小構成）
 cargo test --all-features
+cargo test --no-default-features
 
 # 2. 静的解析 (Clippy)
 cargo clippy --all-targets -- -D warnings
+cargo clippy --no-default-features -- -D warnings
 
 # 3. コードフォーマット検証
 cargo fmt --check

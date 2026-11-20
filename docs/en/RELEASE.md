@@ -73,4 +73,4 @@ Before carrying out release tasks, verify that all code and documentation meet t
 ## 4. Post-release Verification
 
 - Confirm that the GitHub Actions (CI/CD) workflow builds successfully.
-- Ensure that the GitHub Release page is automatically generated and binaries for each platform (Windows, Linux, macOS) are attached.
+- Ensure that the GitHub Release page is automatically generated and the release asset (`MyNMON-windows-x64.zip`) is attached.

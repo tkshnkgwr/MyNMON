@@ -6,7 +6,7 @@
 //! ## 主な機能
 //! - CPU使用率の表示（全体およびコア個別）
 //! - メモリおよびスワップ領域の割り当て状況表示
-//! - ディスクマウント情報と空き容量 of ディスク表示
+//! - ディスクマウント情報と空き容量の表示
 //! - ネットワーク速度の表示
 //! - CPU使用率順のプロセス一覧表示（名前でのフィルタリング機能付き）
 //! - プロセスの起動・終了履歴のログ表示
@@ -29,6 +29,28 @@ use std::{
 use sysinfo::{Disks, Networks, System};
 
 use state::MonitorState;
+
+/// ターミナルの raw モードおよびオルタネートスクリーンを管理する RAII ガード。
+///
+/// 正常終了時はもちろん、エラーによる早期リターン時にも自動的にターミナル状態を復元します。
+struct TerminalGuard;
+
+impl TerminalGuard {
+    /// raw モードを有効化し、オルタネートスクリーンへ切り替えてカーソルを非表示にします。
+    fn enter(stdout: &mut io::Stdout) -> io::Result<Self> {
+        terminal::enable_raw_mode()?;
+        execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
+        Ok(Self)
+    }
+}
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        let mut stdout = io::stdout();
+        let _ = execute!(stdout, LeaveAlternateScreen, cursor::Show);
+        let _ = terminal::disable_raw_mode();
+    }
+}
 
 /// アプリケーションのエントリポイント。
 ///
@@ -64,16 +86,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // ターミナルの初期設定
-    let mut stdout = io::stdout();
-    terminal::enable_raw_mode()?;
-    execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
+    // システム情報の初期化（ターミナル切り替え前に実施し、初期化失敗時はそのままエラー終了）
+    let mut sys = System::new_all()?;
+    #[allow(unused_variables, unused_mut)]
+    let mut disks = Disks::new_with_refreshed_list()?;
+    #[allow(unused_variables, unused_mut)]
+    let mut networks = Networks::new_with_refreshed_list()?;
 
-    let mut sys = System::new_all();
-    #[allow(unused_variables, unused_mut)]
-    let mut disks = Disks::new_with_refreshed_list();
-    #[allow(unused_variables, unused_mut)]
-    let mut networks = Networks::new_with_refreshed_list();
+    // ターミナルの初期設定（スコープ離脱時に TerminalGuard::drop が自動で復元）
+    let mut stdout = io::stdout();
+    let _terminal_guard = TerminalGuard::enter(&mut stdout)?;
+
     let mut state = MonitorState {
         #[cfg(feature = "cpu")]
         show_cpu_total: false,
@@ -98,64 +121,83 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(feature = "diff")]
         spawn_exit_log: Vec::new(),
         tick_rate: Duration::from_millis(1000),
+        #[cfg(feature = "net")]
+        last_refresh_secs: 1.0,
         is_setting_interval: false,
         interval_input: String::new(),
     };
 
-    let mut last_tick = Instant::now();
-
-    // システム情報の初回更新
+    // システム情報の初回更新（CPU使用率の初回差分取得のため短い待機を挟む）
     sys.refresh_all();
     thread::sleep(Duration::from_millis(100));
 
+    let mut last_tick = Instant::now();
+    let mut need_refresh = true;
+
     loop {
-        // 各種メトリクスを更新
-        sys.refresh_all();
-        #[cfg(feature = "disk")]
-        disks.refresh();
-        #[cfg(feature = "net")]
-        networks.refresh();
-
-        // common_lib::compute_diff を使用したプロセスの変更検知
-        #[cfg(feature = "diff")]
-        {
-            let mut current_processes: Vec<_> = sys.processes().values().collect();
-            current_processes.sort_by_key(|p| p.pid().as_u32());
-            let current_proc_str = current_processes
-                .iter()
-                .map(|p| format!("{}:{}", p.pid(), p.name()))
-                .collect::<Vec<_>>()
-                .join("\n");
-
-            if state.last_process_list.is_empty() {
-                state.last_process_list = current_proc_str;
-            } else {
-                let diffs = common_lib::compute_diff(&state.last_process_list, &current_proc_str);
-                for diff in diffs {
-                    match diff.diff_type {
-                        common_lib::DiffType::Added => {
-                            if let Some((pid, name)) = utils::parse_proc_line(&diff.value) {
-                                state
-                                    .spawn_exit_log
-                                    .push(format!("+ {} (PID: {})", name, pid));
-                            }
-                        }
-                        common_lib::DiffType::Removed => {
-                            if let Some((pid, name)) = utils::parse_proc_line(&diff.value) {
-                                state
-                                    .spawn_exit_log
-                                    .push(format!("- {} (PID: {})", name, pid));
-                            }
-                        }
-                        common_lib::DiffType::Unchanged => {}
-                    }
-                }
-                if state.spawn_exit_log.len() > 50 {
-                    let drain_len = state.spawn_exit_log.len() - 50;
-                    state.spawn_exit_log.drain(0..drain_len);
-                }
-                state.last_process_list = current_proc_str;
+        // 初回または更新間隔経過時のみ各種メトリクスを更新（キー入力時の不要な負荷・速度計算誤差を防止）
+        if need_refresh || last_tick.elapsed() >= state.tick_rate {
+            #[cfg(feature = "net")]
+            {
+                let elapsed = last_tick.elapsed().as_secs_f64();
+                state.last_refresh_secs = if need_refresh {
+                    1.0
+                } else {
+                    elapsed.max(0.001)
+                };
             }
+
+            sys.refresh_all();
+            #[cfg(feature = "disk")]
+            disks.refresh(true);
+            #[cfg(feature = "net")]
+            networks.refresh(true);
+
+            // common_lib::compute_diff を使用したプロセスの変更検知
+            #[cfg(feature = "diff")]
+            {
+                let mut current_processes: Vec<_> = sys.processes().values().collect();
+                current_processes.sort_by_key(|p| p.pid().as_u32());
+                let current_proc_str = current_processes
+                    .iter()
+                    .map(|p| format!("{}:{}", p.pid(), p.name().to_string_lossy()))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                if state.last_process_list.is_empty() {
+                    state.last_process_list = current_proc_str;
+                } else {
+                    let diffs =
+                        common_lib::compute_diff(&state.last_process_list, &current_proc_str);
+                    for diff in diffs {
+                        match diff.diff_type {
+                            common_lib::DiffType::Added => {
+                                if let Some((pid, name)) = utils::parse_proc_line(&diff.value) {
+                                    state
+                                        .spawn_exit_log
+                                        .push(format!("+ {} (PID: {})", name, pid));
+                                }
+                            }
+                            common_lib::DiffType::Removed => {
+                                if let Some((pid, name)) = utils::parse_proc_line(&diff.value) {
+                                    state
+                                        .spawn_exit_log
+                                        .push(format!("- {} (PID: {})", name, pid));
+                                }
+                            }
+                            common_lib::DiffType::Unchanged => {}
+                        }
+                    }
+                    if state.spawn_exit_log.len() > 50 {
+                        let drain_len = state.spawn_exit_log.len() - 50;
+                        state.spawn_exit_log.drain(0..drain_len);
+                    }
+                    state.last_process_list = current_proc_str;
+                }
+            }
+
+            last_tick = Instant::now();
+            need_refresh = false;
         }
 
         // ターミナルの描画実行
@@ -247,14 +289,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
-
-        if last_tick.elapsed() >= state.tick_rate {
-            last_tick = Instant::now();
-        }
     }
 
-    // ターミナル状態の復元
-    execute!(stdout, LeaveAlternateScreen, cursor::Show)?;
-    terminal::disable_raw_mode()?;
+    // TerminalGuard がスコープを抜ける際にターミナル状態を自動復元する
     Ok(())
 }

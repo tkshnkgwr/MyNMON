@@ -4,7 +4,7 @@
 
 ![CI Status](https://github.com/tkshnkgwr/MyNMON/actions/workflows/ci.yml/badge.svg)
 ![Latest Release](https://img.shields.io/github/v/release/tkshnkgwr/MyNMON)
-![Rust Version](https://img.shields.io/badge/rust-1.96.0%2B-orange.svg)
+![Rust Version](https://img.shields.io/badge/rust-1.100.0%2B-orange.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
 
@@ -27,7 +27,7 @@ A lightweight, cross-platform CLI system monitor inspired by the classic `nmon` 
 - **Screen Protection (Size Check)**: Automatically skips rendering and displays a warning message if the terminal size is smaller than the minimum requirement (80x20).
 - **Double Launch Prevention**: Named Mutex protection on Windows to prevent screen rendering conflicts.
 - **Interactive Control**: Toggle components immediately using simple keyboard shortcuts.
-- **Highly Optimized**: Extremely small binary footprint (~324 KB) and low memory usage (~21.3 MB).
+- **Highly Optimized**: Extremely small binary footprint (~296 KB for full build, ~250 KB for minimal CPU-only build) and low memory usage (~21.3 MB).
 
 ## Keyboard Shortcuts
 
@@ -62,8 +62,8 @@ Example usage:
 
 ### Prerequisites
 
-1. Ensure you have Rust and Cargo installed. (Rust 1.96.0 or higher is recommended)
-2. This project depends on a shared library `common_lib` via a relative path (`../common_lib`). You need to clone both repositories in the same parent directory:
+1. Ensure you have Rust and Cargo installed. (Rust 1.100.0 or higher is recommended)
+2. This project depends on a shared library `common_lib` (`v0.4.0`) via a relative path (`../common_lib`). You need to clone both repositories in the same parent directory:
 
 ```bash
 # Clone the shared library
@@ -95,13 +95,19 @@ The compiled binary will be available at `target/release/MyNMON` (or `target/rel
 
 You can use Cargo Features to build lightweight binaries with only specific monitoring components:
 
-- **Full Build (Default)**:
+- **Full Build (Default, ~296 KB)**:
 
   ```bash
   cargo build --release
   ```
 
-- **Minimal Build (CPU & Memory only, ~324 KB)**:
+- **Minimal Build (CPU only, ~250 KB)**:
+
+  ```bash
+  cargo build --release --no-default-features --features "cpu"
+  ```
+
+- **Custom Build (CPU & Memory only)**:
 
   ```bash
   cargo build --release --no-default-features --features "cpu,mem"
@@ -112,29 +118,43 @@ You can use Cargo Features to build lightweight binaries with only specific moni
 ```text
 .
 ├── Cargo.toml            # Project configuration and dependency settings
+├── CHANGELOG.md          # Changelog entry point (links to EN / JA)
 ├── LICENSE               # GPL-3.0-or-later License
 ├── README.md             # Project overview (English)
 ├── README_JA.md          # Project overview (Japanese)
 ├── src/
-│   ├── main.rs           # Entry point and main event loop control
+│   ├── main.rs           # Entry point, TerminalGuard (RAII), and main event loop
 │   ├── state.rs          # Application state definition (MonitorState)
 │   ├── ui.rs             # UI and section rendering logic
-│   └── utils.rs          # Time formatting, padding, and ASCII bar utilities
+│   └── utils.rs          # Time formatting, padding, ASCII bar utilities, and unit tests
 └── docs/
+    ├── images/           # Demo screenshots
     ├── ja/               # Japanese Documentation
-    │   ├── SPEC.md
     │   ├── ARCHITECTURE.md
+    │   ├── CHANGELOG.md
+    │   ├── CONTRIBUTING.md
     │   ├── DIAGRAM.md
     │   ├── FOOTPRINTS.md
-    │   ├── TODO.md
-    │   └── TEST_REPORT.md
+    │   ├── INSTRUCTIONS.md
+    │   ├── RELEASE.md
+    │   ├── SECURITY.md
+    │   ├── SPEC.md
+    │   ├── TESTING.md
+    │   ├── TEST_REPORT.md
+    │   └── TODO.md
     └── en/               # English Documentation
-        ├── SPEC.md
         ├── ARCHITECTURE.md
+        ├── CHANGELOG.md
+        ├── CONTRIBUTING.md
         ├── DIAGRAM.md
         ├── FOOTPRINTS.md
-        ├── TODO.md
-        └── TEST_REPORT.md
+        ├── INSTRUCTIONS.md
+        ├── RELEASE.md
+        ├── SECURITY.md
+        ├── SPEC.md
+        ├── TESTING.md
+        ├── TEST_REPORT.md
+        └── TODO.md
 ```
 
 ## Optimization Settings

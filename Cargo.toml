@@ -1,13 +1,13 @@
 [package]
 name = "MyNMON"
-version = "0.7.0"
+version = "0.8.0"
 license = "GPL-3.0-or-later"
 edition = "2021"
-authors = ["AI Studio Developer"]
+authors = ["tkshnkgwr"]
 description = "Windows & Linux compatible ultra-lightweight CUI system monitor inspired by nmon."
 
 [dependencies]
-sysinfo = "0.30.12"
+sysinfo = "0.40.4"
 crossterm = "0.29.0"
 # 2026-07-03: 共有ライブラリの参照追加
 common_lib = { path = "../common_lib" }

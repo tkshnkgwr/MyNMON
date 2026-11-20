@@ -15,7 +15,7 @@ This document outlines the security policies and vulnerability reporting procedu
 2. **Local-Only Operation**:
    - While the monitor tracks network interface I/O speeds, it does not make any outbound network connections or transmit data to external servers. It operates strictly locally to collect system metrics and display them in the terminal.
 3. **Safe Shutdown**:
-   - On termination via signals or keystrokes, cleanup routines are executed to restore the terminal's raw mode and settings to their original state.
+   - Using an RAII guard (`TerminalGuard`), cleanup routines automatically restore the terminal state (disabling raw mode, leaving the alternate screen, and showing the cursor) both on normal exit and on early error returns.
 
 ---
 
@@ -25,7 +25,7 @@ Security updates are provided for the following versions:
 
 | Version                             |     Status    |
 | :---------------------------------- | :-----------: |
-| Latest Release (`v0.7.x` and later) |  ✅ Supported  |
+| Latest Release (`v0.8.x` and later) |  ✅ Supported  |
 | Older Releases                      | ❌ Unsupported |
 
 ---

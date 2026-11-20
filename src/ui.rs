@@ -102,7 +102,7 @@ pub fn draw_ui<W: Write>(
     }
     #[cfg(feature = "net")]
     if state.show_net {
-        draw_network(w, networks)?;
+        draw_network(w, networks, state.last_refresh_secs)?;
     }
     #[cfg(feature = "proc")]
     if state.show_proc {
@@ -124,10 +124,10 @@ pub fn draw_ui<W: Write>(
 ///
 /// ターミナル幅（`width`）に応じて表示する情報を調整し、行の折り返しを防ぎます。
 pub fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::Result<()> {
-    let hostname = System::host_name().unwrap_or_else(|| "Unknown".to_string());
-    let os_name = System::name().unwrap_or_else(|| "Unknown OS".to_string());
-    let kernel = System::kernel_version().unwrap_or_else(|| "Unknown".to_string());
-    let uptime_secs = System::uptime();
+    let hostname = System::host_name().unwrap_or_else(|_| "Unknown".to_string());
+    let os_name = System::name().unwrap_or_else(|_| "Unknown OS".to_string());
+    let kernel = System::kernel_version().unwrap_or_else(|_| "Unknown".to_string());
+    let uptime_secs = System::uptime().unwrap_or(0);
     let uptime_str = format_uptime(uptime_secs);
     let interval_secs = tick_rate.as_secs();
 
@@ -171,6 +171,7 @@ pub fn draw_header<W: Write>(w: &mut W, width: u16, tick_rate: Duration) -> io::
 /// 操作可能なキーショートカットの案内（ヘルプ行）を描画する。
 #[allow(clippy::vec_init_then_push)]
 pub fn draw_help<W: Write>(w: &mut W) -> io::Result<()> {
+    #[allow(unused_mut)]
     let mut shortcuts: Vec<String> = Vec::new();
 
     #[cfg(feature = "cpu")]
@@ -247,14 +248,15 @@ pub fn draw_status_bar<W: Write>(
 
     #[cfg(any(feature = "proc", feature = "diff"))]
     if !state.filter_query.is_empty() {
-        // すべてのプロセス名からマッチする件数をカウント
+        // すべてのプロセス名からマッチする件数をカウント（大文字小文字を区別しない）
         let all_proc_names = sys
             .processes()
             .values()
-            .map(|p| p.name().to_string())
+            .map(|p| p.name().to_string_lossy().into_owned())
             .collect::<Vec<_>>()
             .join(" ");
-        let matches_count = common_lib::count_occurrences(&all_proc_names, &state.filter_query);
+        let matches_count =
+            common_lib::count_occurrences(&all_proc_names, &state.filter_query.to_lowercase());
 
         w_line!(
             w,
@@ -365,8 +367,7 @@ pub fn draw_welcome_screen<W: Write>(w: &mut W) -> io::Result<()> {
 /// 全体のCPU使用率を取得し、ASCIIのプログレスバーを交えて描画する。
 #[cfg(feature = "cpu")]
 pub fn draw_cpu_total<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
-    let global_cpu = sys.global_cpu_info();
-    let load = global_cpu.cpu_usage();
+    let load = sys.global_cpu_usage();
     let bar = get_ascii_bar(load as f64, 25);
     w_line!(w, "{}", "--- CPU Utilization (Total) ---".bold().cyan())?;
     w_line!(
@@ -394,7 +395,7 @@ pub fn draw_cpu_cores<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
         "--- CPU Utilization (Individual Cores) ---".bold().cyan()
     )?;
     for (i, cpu) in sys.cpus().iter().enumerate() {
-        let load = cpu.cpu_usage();
+        let load = cpu.usage();
         let bar_width = 25;
         let bar = get_ascii_bar(load as f64, bar_width);
         w_line!(
@@ -422,7 +423,11 @@ pub fn draw_memory<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
     let total_mem = sys.total_memory() as f64 / 1024.0 / 1024.0;
     let used_mem = sys.used_memory() as f64 / 1024.0 / 1024.0;
     let free_mem = sys.free_memory() as f64 / 1024.0 / 1024.0;
-    let mem_pct = (used_mem / total_mem) * 100.0;
+    let mem_pct = if total_mem > 0.0 {
+        (used_mem / total_mem) * 100.0
+    } else {
+        0.0
+    };
     let mem_bar = get_ascii_bar(mem_pct, 40);
 
     let total_swap = sys.total_swap() as f64 / 1024.0 / 1024.0;
@@ -478,11 +483,15 @@ pub fn draw_memory<W: Write>(w: &mut W, sys: &System) -> io::Result<()> {
 #[cfg(feature = "disk")]
 pub fn draw_disk<W: Write>(w: &mut W, disks: &Disks) -> io::Result<()> {
     w_line!(w, "{}", "--- Disk Mounts & Space ---".bold().yellow())?;
-    for disk in disks.list() {
+    for disk in disks {
         let total = disk.total_space() as f64 / 1024.0 / 1024.0 / 1024.0;
         let available = disk.available_space() as f64 / 1024.0 / 1024.0 / 1024.0;
         let used = total - available;
-        let usage_pct = (used / total) * 100.0;
+        let usage_pct = if total > 0.0 {
+            (used / total) * 100.0
+        } else {
+            0.0
+        };
         w_line!(
             w,
             "  {:<12} ({:?}): {:.1}GB / {:.1}GB free ({:.1}% used)",
@@ -498,8 +507,10 @@ pub fn draw_disk<W: Write>(w: &mut W, disks: &Disks) -> io::Result<()> {
 }
 
 /// 各ネットワークインターフェースのデータの受信速度（Rx）および送信速度（Tx）をKB/s単位で描画する。
+///
+/// 前回更新からの実経過時間（`elapsed_secs`）で割ることで、更新間隔変更時も正確な1秒あたりの速度を表示します。
 #[cfg(feature = "net")]
-pub fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> {
+pub fn draw_network<W: Write>(w: &mut W, networks: &Networks, elapsed_secs: f64) -> io::Result<()> {
     w_line!(
         w,
         "{}",
@@ -508,10 +519,12 @@ pub fn draw_network<W: Write>(w: &mut W, networks: &Networks) -> io::Result<()> 
     let mut net_list: Vec<_> = networks.iter().collect();
     net_list.sort_by(|a, b| a.0.cmp(b.0));
 
+    let secs = elapsed_secs.max(0.001);
     for (interface_name, data) in net_list {
-        let rx = data.received() as f64 / 1024.0; // KB/秒
-        let tx = data.transmitted() as f64 / 1024.0; // KB/秒
-        let name_fixed = pad_or_truncate(interface_name, 16);
+        let rx = data.received() as f64 / 1024.0 / secs; // KB/秒
+        let tx = data.transmitted() as f64 / 1024.0 / secs; // KB/秒
+        let iface_str = interface_name.to_string_lossy();
+        let name_fixed = pad_or_truncate(&iface_str, 16);
         w_line!(
             w,
             "  {} : Rx: {:8.2} KB/s | Tx: {:8.2} KB/s",
@@ -541,10 +554,10 @@ pub fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -
     // プロセス名でフィルタリング
     if !state.filter_query.is_empty() {
         let query = state.filter_query.to_lowercase();
-        processes.retain(|p| p.name().to_lowercase().contains(&query));
+        processes.retain(|p| p.name().to_string_lossy().to_lowercase().contains(&query));
     }
 
-    processes.sort_by(|a, b| b.cpu_usage().partial_cmp(&a.cpu_usage()).unwrap());
+    processes.sort_by(|a, b| b.cpu_usage().total_cmp(&a.cpu_usage()));
 
     w_line!(
         w,
@@ -556,7 +569,8 @@ pub fn draw_processes<W: Write>(w: &mut W, sys: &System, state: &MonitorState) -
     )?;
     for proc in processes.iter().take(8) {
         let mem_mb = proc.memory() as f64 / 1024.0 / 1024.0;
-        let name_fixed = pad_or_truncate(proc.name(), 20);
+        let proc_name = proc.name().to_string_lossy();
+        let name_fixed = pad_or_truncate(&proc_name, 20);
         let cpu_val = format!("{:.1}%", proc.cpu_usage());
         let mem_val = format!("{:.1} MB", mem_mb);
         let pid_val = proc.pid().to_string();

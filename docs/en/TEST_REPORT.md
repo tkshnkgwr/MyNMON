@@ -19,7 +19,7 @@ This report summarizes the results of build verification, automated testing, and
 ### 1.2 Test Environment
 
 - **OS**: Windows 11 Pro
-- **Toolchain**: Rust 1.96.0 / Cargo
+- **Toolchain**: Rust 1.100.0 / Cargo
 
 ---
 
@@ -27,27 +27,31 @@ This report summarizes the results of build verification, automated testing, and
 
 Verification of compilations and unit test runs across different Cargo Feature flags:
 
-| Command                                                | Features                                         | Result   | Notes                                                   |
-| :----------------------------------------------------- | :----------------------------------------------- | :------: | :------------------------------------------------------ |
-| `cargo test --all-features`                            | All (`cpu`, `mem`, `disk`, `net`, `proc`, `diff`)| **PASS** | All unit tests pass, compiles successfully              |
-| `cargo test --no-default-features --features "cpu,mem"`| Selected (`cpu`, `mem`)                          | **PASS** | Compiles and passes tests with minimal flags            |
-| `cargo test --no-default-features`                     | None (header and help only)                      | **PASS** | Compiles and passes tests without monitor extensions    |
-| `cargo doc --no-deps`                                  | Documentation                                    | **PASS** | Validates Rustdoc documentation links without warnings  |
+| Command                                                 | Features                                         |  Result  | Notes                                                  |
+| :------------------------------------------------------ | :----------------------------------------------- | :------: | :----------------------------------------------------- |
+| `cargo test --all-features`                             | All (`cpu`, `mem`, `disk`, `net`, `proc`, `diff`)| **PASS** | All 4 unit tests pass, compiles successfully           |
+| `cargo test --no-default-features --features "cpu,mem"` | Selected (`cpu`, `mem`)                          | **PASS** | Compiles and passes all 4 tests with minimal flags     |
+| `cargo test --no-default-features`                      | None (header and help only)                      | **PASS** | Compiles and passes all 4 tests without extensions     |
+| `cargo clippy --all-targets -- -D warnings`             | All features static analysis                     | **PASS** | Zero warnings and zero errors                          |
+| `cargo clippy --no-default-features -- -D warnings`     | Minimal build static analysis                    | **PASS** | Zero warnings and zero errors                          |
+| `cargo doc --no-deps --document-private-items`          | Documentation                                    | **PASS** | Validates Rustdoc documentation links without warnings |
 
 ```text
-running 1 test
+running 4 tests
+test utils::tests::test_format_uptime ... ok
 test utils::tests::test_get_ascii_bar ... ok
+test utils::tests::test_pad_or_truncate ... ok
+test utils::tests::test_parse_proc_line ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 ```
 
 ### 2.1 Test Case Details
 
-- `tests::test_get_ascii_bar`:
-  - Under `0.0%` load, generates an empty bar: `[          ]`.
-  - Under `50.0%` load, generates a half-filled bar: `[====>     ]`.
-  - Under `100.0%` load, generates a completely filled bar: `[=========>]`.
-  - Verifies that all assertions pass successfully.
+- `utils::tests::test_get_ascii_bar`: Validates `0%`, `50%`, and `100%` bar generation as well as out-of-range clamping and `width == 0` safety.
+- `utils::tests::test_format_uptime`: Validates uptime formatting for `0s`, under 24 hours (`HH:MM:SS`), and 24 hours or more (`Xd HH:MM:SS`).
+- `utils::tests::test_pad_or_truncate`: Validates half-width/full-width character width calculation for truncation and padding.
+- `utils::tests::test_parse_proc_line`: Validates `PID:name` parsing, names containing colons, and `None` return on malformed lines.
 
 ---
 
@@ -68,7 +72,7 @@ The table below records validation results obtained by running the compiled rele
 | **Double-Launch**   | Run two instances   | Second instance terminates with an error code of `1`.       | **PASS** | Outputs: `Error: Another instance of MyNMON is running.`|
 | **Exit**            | Press `q` or `Esc`  | Process exits immediately; terminal state is restored.      | **PASS** | Restores cursor, raw mode disabled, alternate screen off|
 | **Help Option**     | Run `--help` / `-h` | Prints help text and usage commands, then exits.            | **PASS** | Outputs option flags and key combinations.              |
-| **Version Option**  | Run `--version`/`-v`| Prints dynamic Cargo package version and exits.             | **PASS** | Outputs `MyNMON v0.7.0` with copyright and license.     |
+| **Version Option**  | Run `--version`/`-v`| Prints dynamic Cargo package version and exits.             | **PASS** | Outputs `MyNMON v0.8.0` with copyright and license.     |
 | **Invalid Option**  | Run `--invalid`     | Writes error to stderr, outputs usage, exits (status 1).    | **PASS** | Correctly catches invalid CLI arguments.                |
 | **Uptime**          | Watch header        | Uptime counter increments second by second.                 | **PASS** | Properly parses `sysinfo::System::uptime()`.            |
 | **Flicker-Free**    | Change sections     | Layout redrawing does not trigger terminal flickering.      | **PASS** | Upwards cursor resets and line-end clears function well.|
@@ -168,3 +172,16 @@ The binary footprint remains incredibly lightweight (binary size ~300KB, memory 
   - `cargo check` -> **PASS**
   - `cargo test` -> **PASS**
   - `cargo doc --no-deps` -> **PASS**
+
+## 15. Test History (2026-11-20 - Full Project Audit, Dependency Upgrade & Robustness Fixes)
+
+- **Background**: Upgraded `sysinfo` to `0.40.4`, verified `common_lib v0.4.0` integration, introduced `TerminalGuard` (RAII), fixed division-by-zero / `NaN` sort panic / case-insensitive filter match count mismatch / elapsed-time network speed calculation / `--no-default-features` Clippy warnings, and expanded unit tests to 4 cases.
+- **Commands**:
+  - `cargo fmt --check` -> **PASS**
+  - `cargo test --all-features` -> **PASS** (4 passed)
+  - `cargo test --no-default-features --features "cpu,mem"` -> **PASS** (4 passed)
+  - `cargo test --no-default-features` -> **PASS** (4 passed)
+  - `cargo clippy --all-targets -- -D warnings` -> **PASS**
+  - `cargo clippy --no-default-features -- -D warnings` -> **PASS**
+  - `cargo doc --no-deps --document-private-items` -> **PASS**
+  - `cargo build --release` -> **PASS** (Full build ~296 KB / CPU-only minimal build ~250 KB)

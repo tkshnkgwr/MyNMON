@@ -51,8 +51,9 @@ The system is a single executable binary that operates on a single-threaded even
 
 ### Key Libraries and Roles
 
-- **`sysinfo`**: Obtains metrics for hardware, processes, OS, networks, and disks via an OS-independent abstract API. It contains platform-specific implementations such as the Windows API and the Linux `/proc` filesystem.
-- **`crossterm`**: Manages terminal alternate screens, cursor visibility, raw mode control, keyboard event monitoring, and terminal control sequences.
+- **`sysinfo` (`0.40.x`)**: Obtains metrics for hardware, processes, OS, networks, and disks via an OS-independent abstract API. It contains platform-specific implementations such as the Windows API and the Linux `/proc` filesystem.
+- **`crossterm` (`0.29.x`)**: Manages terminal alternate screens, cursor visibility, raw mode control, keyboard event monitoring, and terminal control sequences.
+- **`common_lib` (`0.4.x`)**: Shared core crate located at `../common_lib`. Provides Windows Named Mutex double-launch prevention (`check_single_instance`), process list diff calculation (`compute_diff`), and filter match counting (`count_occurrences`).
 
 ---
 
@@ -62,7 +63,7 @@ The system is a single executable binary that operates on a single-threaded even
 
 The top line of the screen always displays basic system information and status. To prevent layout corruption (unwanted line wrapping), items are dynamically omitted based on the current terminal width.
 
-- **Full View (Width >= 105 chars)**: Program Name & Version (e.g., `MyNMON v0.7.0`) | Host: hostname | OS: OS Name | Kernel: Kernel Version | Uptime: Uptime | Interval: Refresh Interval
+- **Full View (Width >= 105 chars)**: Program Name & Version (e.g., `MyNMON v0.8.0`) | Host: hostname | OS: OS Name | Kernel: Kernel Version | Uptime: Uptime | Interval: Refresh Interval
 - **Medium View (Width 90–104 chars)**: Hides the Kernel Version, displaying the rest.
 - **Small View (Width 80–89 chars)**: Hides the Kernel Version and OS Name, displaying the rest.
 - **System Uptime**: Shows time elapsed since system boot in the format `Xd HH:MM:SS` (or `HH:MM:SS` if less than 24 hours), updating every second.
@@ -96,7 +97,7 @@ The monitor includes the following information sections, which can be toggled on
    - Displays free space / total capacity and utilization (%).
 5. **Network Section (`n` Key)**:
    - Displays active network interface names (sorted alphabetically).
-   - Displays Receive (Rx) and Transmit (Tx) speeds in KB/s. Interface names are calculated using character-width padding to prevent layout shifts.
+   - Accurately computes and displays Receive (Rx) and Transmit (Tx) speeds in KB/s normalized by the actual elapsed seconds since the last refresh. Interface names are calculated using character-width padding to prevent layout shifts.
 6. **Process Section (`p` or `t` Key)**:
    - Displays the top 8 active processes sorted by CPU utilization.
    - Displays PID (right-aligned to 6 columns), Process Name (truncated/padded to 20 chars), CPU utilization (%), and Memory allocation (MB) in a neat tabular layout.
@@ -120,7 +121,7 @@ You can supply flags at startup to execute specific operations and exit immediat
 1. **Help (`-h` or `--help`)**:
    - Prints application usage, options, and run-time shortcuts, then exits.
 2. **Version (`-v` or `--version`)**:
-   - Prints the dynamic version resolved from `Cargo.toml` at compile-time, along with copyright and license notice (e.g., `MyNMON v0.7.0\nCopyright (c) 2026 tkshnkgwr\nLicense: GPL-3.0-or-later`), then exits.
+   - Prints the dynamic version resolved from `Cargo.toml` at compile-time, along with copyright and license notice (e.g., `MyNMON v0.8.0\nCopyright (c) 2026 tkshnkgwr\nLicense: GPL-3.0-or-later`), then exits.
 3. **Invalid Option Handling**:
    - Unknown arguments write an error (e.g., `Error: Unknown option '...'`) and usage directions to stderr and exit with status `1`.
 
@@ -172,14 +173,15 @@ You can supply flags at startup to execute specific operations and exit immediat
 ## 5. Non-Functional Requirements
 
 - **Update Frequency**: Refreshes metrics and redraws the UI every 1 second (1000ms) by default. The interval can be configured dynamically using the `r` key (in seconds).
-- **Latency**: Key interrupts trigger immediate UI updates and redraws without waiting for the timer tick.
+- **Latency**: Key interrupts trigger immediate UI updates and redraws without waiting for the timer tick or triggering redundant metric refreshes.
 - **Rendering Performance & Guard rails**:
   - Requires a minimum terminal size of **"80 columns by 20 rows"**. If smaller, rendering is skipped and a resize warning is displayed.
   - Avoids `Clear(All)` updates, rewriting the screen content from `(0, 0)` to eliminate terminal flickers.
   - Clears lines using `UntilNewLine` and clears the bottom of the screen using `FromCursorDown` to prevent trailing characters when data structures shrink.
 - **Footprint**:
-  - **Binary Size**: Under 350 KB (optimized release build).
+  - **Binary Size**: Under 350 KB (optimized release build: ~296 KB full build / ~250 KB minimal CPU-only build).
   - **Memory Usage**: Under 25 MB (normal execution with process monitoring active).
 - **Robustness**:
-  - On panics, aborts execution immediately (`panic = 'abort'`) to prevent terminal lockups.
-  - Uses fallback values (e.g., `"Unknown"`, `0`) if OS metric collection fails, ensuring the process remains running.
+  - Uses an RAII guard (`TerminalGuard`) to reliably restore terminal state (disable raw mode, exit alternate screen, show cursor) on both normal exit and early error returns.
+  - Guards against division-by-zero (when total memory or disk capacity is 0) and `NaN` sort panics, and uses fallback values (e.g., `"Unknown"`, `0`) if OS metric collection fails.
+  - Aborts immediately on unrecoverable panics (`panic = 'abort'`).

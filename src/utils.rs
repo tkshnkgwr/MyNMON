@@ -42,7 +42,11 @@ pub fn pad_or_truncate(s: &str, width: usize) -> String {
 /// # 引数
 /// - `percent`: 割合（0.0 から 100.0 の範囲にクランプされます）
 /// - `width`: バーの文字幅
+#[allow(dead_code)]
 pub fn get_ascii_bar(percent: f64, width: usize) -> String {
+    if width == 0 {
+        return "[]".to_string();
+    }
     let pct = percent.clamp(0.0, 100.0);
     let filled = ((pct / 100.0) * width as f64).round() as usize;
     if filled == 0 {
@@ -59,6 +63,7 @@ pub fn get_ascii_bar(percent: f64, width: usize) -> String {
 }
 
 /// `PID:プロセス名` 形式の文字列を解析し、`(PID, プロセス名)` のタプルを返すヘルパー関数。
+#[allow(dead_code)]
 pub fn parse_proc_line(line: &str) -> Option<(String, String)> {
     let parts: Vec<&str> = line.splitn(2, ':').collect();
     if parts.len() == 2 {
@@ -110,5 +115,39 @@ mod tests {
         assert_eq!(get_ascii_bar(0.0, 10), "[          ]");
         assert_eq!(get_ascii_bar(50.0, 10), "[====>     ]");
         assert_eq!(get_ascii_bar(100.0, 10), "[=========>]");
+        // 範囲外の値や幅 0 のエッジケースでもパニックしないこと
+        assert_eq!(get_ascii_bar(-10.0, 10), "[          ]");
+        assert_eq!(get_ascii_bar(150.0, 10), "[=========>]");
+        assert_eq!(get_ascii_bar(50.0, 0), "[]");
+    }
+
+    #[test]
+    fn test_format_uptime() {
+        assert_eq!(format_uptime(0), "00:00:00");
+        assert_eq!(format_uptime(3661), "01:01:01");
+        assert_eq!(format_uptime(86400 + 3661), "1d 01:01:01");
+    }
+
+    #[test]
+    fn test_pad_or_truncate() {
+        assert_eq!(pad_or_truncate("eth0", 8), "eth0    ");
+        assert_eq!(pad_or_truncate("abcdefghij", 5), "abcde");
+        // 全角文字（幅2）を含む場合の幅計算と切り詰め
+        assert_eq!(pad_or_truncate("あいう", 6), "あいう");
+        assert_eq!(pad_or_truncate("あいう", 5), "あい ");
+        assert_eq!(pad_or_truncate("aい", 5), "aい  ");
+    }
+
+    #[test]
+    fn test_parse_proc_line() {
+        assert_eq!(
+            parse_proc_line("1234:chrome.exe"),
+            Some(("1234".to_string(), "chrome.exe".to_string()))
+        );
+        assert_eq!(
+            parse_proc_line("42:name:with:colon"),
+            Some(("42".to_string(), "name:with:colon".to_string()))
+        );
+        assert_eq!(parse_proc_line("invalid_line_without_colon"), None);
     }
 }
